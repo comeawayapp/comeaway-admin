@@ -613,6 +613,30 @@ export const getActivationCodes = async (accessToken, query = {}) => {
   }
 };
 
+export const updateActivationCode = async (id, data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/activation-codes/admin/activation-codes/${id}`;
+  try {
+    const response = await axiosInstance.put(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const deleteActivationCode = async (id, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/activation-codes/admin/activation-codes/${id}`;
+  try {
+    const response = await axiosInstance.delete(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
 // Delete user by ID (Admin only)
 export const deleteUserById = async (userId, accessToken) => {
   try {

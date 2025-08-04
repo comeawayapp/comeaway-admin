@@ -2,11 +2,20 @@ import { useState, useEffect, useContext } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaEye, FaPlus } from "react-icons/fa";
+import {
+  FaEye,
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaDownload,
+  FaUpload,
+} from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
 import {
   createActivationCode,
   getActivationCodes,
+  updateActivationCode,
+  deleteActivationCode,
 } from "../../../utils/API_SERVICE";
 
 const initialState = {
@@ -36,6 +45,12 @@ const ActivationCodeManagement = () => {
   const [fetching, setFetching] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedCode, setSelectedCode] = useState(null);
+  const [editingCode, setEditingCode] = useState(null);
+  const [editForm, setEditForm] = useState(initialState);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -132,6 +147,151 @@ const ActivationCodeManagement = () => {
 
   const handleBackToTable = () => {
     setSelectedCode(null);
+  };
+
+  const handleEditCode = (code) => {
+    setEditingCode(code);
+    setEditForm({
+      code: code.code,
+      productName: code.productName,
+      orderNumber: code.orderNumber,
+      customerName: code.customerName,
+      customerEmail: code.customerEmail,
+      phoneNumber: code.phoneNumber,
+      platform: code.platform,
+      expiresIn: code.expiresIn
+        ? new Date(code.expiresIn).toISOString().split("T")[0]
+        : "",
+    });
+  };
+
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    try {
+      await updateActivationCode(editingCode._id, editForm, accessToken);
+      toast.success("Activation code updated successfully");
+      setEditingCode(null);
+      setEditForm(initialState);
+      fetchCodes();
+    } catch (err) {
+      toast.error(err.message || "Error updating activation code");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteCode = async (code) => {
+    if (
+      window.confirm("Are you sure you want to delete this activation code?")
+    ) {
+      setDeleteLoading(true);
+      try {
+        await deleteActivationCode(code._id, accessToken);
+        toast.success("Activation code deleted successfully");
+        fetchCodes();
+      } catch (err) {
+        toast.error(err.message || "Error deleting activation code");
+      } finally {
+        setDeleteLoading(false);
+      }
+    }
+  };
+
+  const handleExportData = async () => {
+    setExportLoading(true);
+    try {
+      const csvContent = [
+        "Code,Product Name,Order Number,Customer Name,Customer Email,Phone Number,Platform,Expiry Date,Redeemed",
+        ...codes.map((code) =>
+          [
+            code.code,
+            `"${code.productName}"`,
+            code.orderNumber,
+            `"${code.customerName}"`,
+            code.customerEmail,
+            code.phoneNumber,
+            `"${code.platform}"`,
+            code.expiresIn
+              ? new Date(code.expiresIn).toLocaleDateString()
+              : "N/A",
+            code.redeemed ? "Yes" : "No",
+          ].join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `activation-codes-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Data exported successfully");
+    } catch (err) {
+      toast.error("Error exporting data");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleImportData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setImportLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const csv = e.target.result;
+        const lines = csv.split("\n");
+        const headers = lines[0].split(",");
+
+        // Skip header row and process data
+        const importData = lines
+          .slice(1)
+          .filter((line) => line.trim())
+          .map((line) => {
+            const values = line.split(",");
+            return {
+              code: values[0],
+              productName: values[1].replace(/"/g, ""),
+              orderNumber: values[2],
+              customerName: values[3].replace(/"/g, ""),
+              customerEmail: values[4],
+              phoneNumber: values[5],
+              platform: values[6].replace(/"/g, ""),
+              expiresIn: values[7] !== "N/A" ? new Date(values[7]) : null,
+            };
+          });
+
+        // Create activation codes in batches
+        for (const data of importData) {
+          try {
+            await createActivationCode(data, accessToken);
+          } catch (err) {
+            console.error("Error importing code:", data.code, err);
+          }
+        }
+
+        toast.success("Data imported successfully");
+        fetchCodes();
+      } catch (err) {
+        toast.error("Error importing data");
+      } finally {
+        setImportLoading(false);
+        event.target.value = null; // Reset file input
+      }
+    };
+    reader.readAsText(file);
   };
 
   const filteredData = codes.filter(
@@ -259,14 +419,38 @@ const ActivationCodeManagement = () => {
                 className="px-4 py-2 border rounded w-full"
               />
             </div>
-            <button
-              onClick={() => setFormOpen(!formOpen)}
-              className="ml-4 px-4 py-2 text-white rounded flex items-center gap-2"
-              style={{ backgroundColor: "#439AB8" }}
-            >
-              <FaPlus />
-              {formOpen ? "Hide Form" : "Add Code"}
-            </button>
+            <div className="flex space-x-2">
+              <label
+                className="px-4 py-2 text-white rounded flex items-center gap-2 cursor-pointer"
+                style={{ backgroundColor: "#439AB8" }}
+              >
+                <FaUpload />
+                {importLoading ? "Importing..." : "Import CSV"}
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportData}
+                  className="hidden"
+                />
+              </label>
+              <button
+                onClick={handleExportData}
+                disabled={exportLoading}
+                className="px-4 py-2 text-white rounded flex items-center gap-2 disabled:opacity-60"
+                style={{ backgroundColor: "#439AB8" }}
+              >
+                <FaDownload />
+                {exportLoading ? "Exporting..." : "Export CSV"}
+              </button>
+              <button
+                onClick={() => setFormOpen(!formOpen)}
+                className="px-4 py-2 text-white rounded flex items-center gap-2"
+                style={{ backgroundColor: "#439AB8" }}
+              >
+                <FaPlus />
+                {formOpen ? "Hide Form" : "Add Code"}
+              </button>
+            </div>
           </div>
 
           {formOpen && (
@@ -433,6 +617,176 @@ const ActivationCodeManagement = () => {
             </div>
           )}
 
+          {editingCode && (
+            <div className="mb-6 bg-gray-100 p-6 rounded shadow-md">
+              <h2 className="text-2xl font-bold mb-6 text-center">
+                Edit Activation Code
+              </h2>
+              <form
+                className="grid grid-cols-2 gap-4"
+                onSubmit={handleEditSubmit}
+              >
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-code"
+                    className="font-medium text-gray-700"
+                  >
+                    6-digit Code
+                  </label>
+                  <input
+                    id="edit-code"
+                    name="code"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="e.g. 123456"
+                    value={editForm.code}
+                    onChange={handleEditChange}
+                    maxLength={6}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-productName"
+                    className="font-medium text-gray-700"
+                  >
+                    Product Name
+                  </label>
+                  <input
+                    id="edit-productName"
+                    name="productName"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Product Name"
+                    value={editForm.productName}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-orderNumber"
+                    className="font-medium text-gray-700"
+                  >
+                    Order Number
+                  </label>
+                  <input
+                    id="edit-orderNumber"
+                    name="orderNumber"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Order Number"
+                    value={editForm.orderNumber}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-customerName"
+                    className="font-medium text-gray-700"
+                  >
+                    Customer Name
+                  </label>
+                  <input
+                    id="edit-customerName"
+                    name="customerName"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Customer Name"
+                    value={editForm.customerName}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-customerEmail"
+                    className="font-medium text-gray-700"
+                  >
+                    Customer Email
+                  </label>
+                  <input
+                    id="edit-customerEmail"
+                    name="customerEmail"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Customer Email"
+                    value={editForm.customerEmail}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                    type="email"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-phoneNumber"
+                    className="font-medium text-gray-700"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="edit-phoneNumber"
+                    name="phoneNumber"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="e.g. +1234567890"
+                    value={editForm.phoneNumber}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-platform"
+                    className="font-medium text-gray-700"
+                  >
+                    Platform
+                  </label>
+                  <input
+                    id="edit-platform"
+                    name="platform"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Platform"
+                    value={editForm.platform}
+                    onChange={handleEditChange}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="edit-expiresIn"
+                    className="font-medium text-gray-700"
+                  >
+                    Expiry Date
+                  </label>
+                  <input
+                    id="edit-expiresIn"
+                    name="expiresIn"
+                    type="date"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={editForm.expiresIn}
+                    onChange={handleEditChange}
+                  />
+                </div>
+                <div className="col-span-2 flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="flex-1 px-4 py-2 text-white rounded font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: "#28a745" }}
+                  >
+                    {editLoading ? "Updating..." : "Update Code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingCode(null);
+                      setEditForm(initialState);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded font-semibold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-300 rounded-lg">
               <thead>
@@ -522,15 +876,34 @@ const ActivationCodeManagement = () => {
                           {code.redeemed ? "Yes" : "No"}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300 flex gap-2">
-                        <button
-                          onClick={() => handleCodePreview(code)}
-                          className="px-3 py-1 rounded text-white"
-                          style={{ backgroundColor: "#439AB8" }}
-                          title="View"
-                        >
-                          <FaEye />
-                        </button>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCodePreview(code)}
+                            className="px-3 py-1 rounded text-white"
+                            style={{ backgroundColor: "#439AB8" }}
+                            title="View"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleEditCode(code)}
+                            className="px-3 py-1 rounded text-white"
+                            style={{ backgroundColor: "#28a745" }}
+                            title="Edit"
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCode(code)}
+                            disabled={deleteLoading}
+                            className="px-3 py-1 rounded text-white disabled:opacity-60"
+                            style={{ backgroundColor: "#dc3545" }}
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
