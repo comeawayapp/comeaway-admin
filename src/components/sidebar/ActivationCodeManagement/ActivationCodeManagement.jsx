@@ -5,17 +5,18 @@ import "react-toastify/dist/ReactToastify.css";
 import {
   FaEye,
   FaPlus,
-  FaEdit,
   FaTrash,
   FaDownload,
   FaUpload,
+  FaCheck,
 } from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
 import {
   createActivationCode,
   getActivationCodes,
-  updateActivationCode,
   deleteActivationCode,
+  importActivationCodes,
+  redeemActivationCode,
 } from "../../../utils/API_SERVICE";
 
 const initialState = {
@@ -32,10 +33,9 @@ const initialState = {
 const ActivationCodeManagement = () => {
   const { accessToken } = useContext(AuthContext);
   const [currentPage, setCurrentPage] = useState(0);
-  const [codeSearch, setCodeSearch] = useState("");
-  const [productSearch, setProductSearch] = useState("");
-  const [customerSearch, setCustomerSearch] = useState("");
-  const [orderSearch, setOrderSearch] = useState("");
+  const [searchField, setSearchField] = useState("code");
+  const [searchValue, setSearchValue] = useState("");
+  const [redeemStatusFilter, setRedeemStatusFilter] = useState("");
   const [form, setForm] = useState(initialState);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,9 +45,7 @@ const ActivationCodeManagement = () => {
   const [fetching, setFetching] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedCode, setSelectedCode] = useState(null);
-  const [editingCode, setEditingCode] = useState(null);
-  const [editForm, setEditForm] = useState(initialState);
-  const [editLoading, setEditLoading] = useState(false);
+  const [redeemedCodes, setRedeemedCodes] = useState(new Set());
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -57,13 +55,36 @@ const ActivationCodeManagement = () => {
     if (accessToken) fetchCodes();
   }, [accessToken]);
 
+  // Debounced search effect
+  useEffect(() => {
+    if (accessToken) {
+      const timeoutId = setTimeout(() => {
+        fetchCodes();
+      }, 500); // 500ms delay
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [accessToken, searchValue, redeemStatusFilter]);
+
   const fetchCodes = async () => {
     setFetching(true);
     setFetchError("");
+
     try {
-      const data = await getActivationCodes(accessToken);
+      const queryParams = {};
+
+      if (searchValue.trim()) {
+        queryParams[searchField] = searchValue.trim();
+      }
+
+      if (redeemStatusFilter) {
+        queryParams.redeemed = redeemStatusFilter;
+      }
+
+      console.log(queryParams);
+      const data = await getActivationCodes(accessToken, queryParams);
       setCodes(data);
-      toast.success("Activation codes fetched successfully");
+      // toast.success("Activation codes fetched successfully");
     } catch (err) {
       setFetchError(err.message);
       toast.error("Error fetching activation codes");
@@ -125,20 +146,12 @@ const ActivationCodeManagement = () => {
     setCurrentPage(data.selected);
   };
 
-  const handleCodeSearchChange = (e) => {
-    setCodeSearch(e.target.value);
+  const handleSearchFieldChange = (e) => {
+    setSearchField(e.target.value);
   };
 
-  const handleProductSearchChange = (e) => {
-    setProductSearch(e.target.value);
-  };
-
-  const handleCustomerSearchChange = (e) => {
-    setCustomerSearch(e.target.value);
-  };
-
-  const handleOrderSearchChange = (e) => {
-    setOrderSearch(e.target.value);
+  const handleSearchValueChange = (e) => {
+    setSearchValue(e.target.value);
   };
 
   const handleCodePreview = (code) => {
@@ -147,42 +160,6 @@ const ActivationCodeManagement = () => {
 
   const handleBackToTable = () => {
     setSelectedCode(null);
-  };
-
-  const handleEditCode = (code) => {
-    setEditingCode(code);
-    setEditForm({
-      code: code.code,
-      productName: code.productName,
-      orderNumber: code.orderNumber,
-      customerName: code.customerName,
-      customerEmail: code.customerEmail,
-      phoneNumber: code.phoneNumber,
-      platform: code.platform,
-      expiresIn: code.expiresIn
-        ? new Date(code.expiresIn).toISOString().split("T")[0]
-        : "",
-    });
-  };
-
-  const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditLoading(true);
-    try {
-      await updateActivationCode(editingCode._id, editForm, accessToken);
-      toast.success("Activation code updated successfully");
-      setEditingCode(null);
-      setEditForm(initialState);
-      fetchCodes();
-    } catch (err) {
-      toast.error(err.message || "Error updating activation code");
-    } finally {
-      setEditLoading(false);
-    }
   };
 
   const handleDeleteCode = async (code) => {
@@ -198,6 +175,27 @@ const ActivationCodeManagement = () => {
         toast.error(err.message || "Error deleting activation code");
       } finally {
         setDeleteLoading(false);
+      }
+    }
+  };
+
+  const handleRedeemCode = async (code) => {
+    if (code.redeemed || redeemedCodes.has(code.code)) {
+      toast.info("This code has already been redeemed");
+      return;
+    }
+
+    if (
+      window.confirm("Are you sure you want to redeem this activation code?")
+    ) {
+      try {
+        await redeemActivationCode(code.code, accessToken);
+        setRedeemedCodes((prev) => new Set([...prev, code.code]));
+        toast.success("Activation code redeemed successfully");
+        setSelectedCode(null); // Go back to table view
+        fetchCodes(); // Refresh data to show updated status
+      } catch (err) {
+        toast.error(err.message || "Error redeeming activation code");
       }
     }
   };
@@ -236,7 +234,7 @@ const ActivationCodeManagement = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       toast.success("Data exported successfully");
-    } catch (err) {
+    } catch {
       toast.error("Error exporting data");
     } finally {
       setExportLoading(false);
@@ -253,7 +251,6 @@ const ActivationCodeManagement = () => {
       try {
         const csv = e.target.result;
         const lines = csv.split("\n");
-        const headers = lines[0].split(",");
 
         // Skip header row and process data
         const importData = lines
@@ -273,18 +270,20 @@ const ActivationCodeManagement = () => {
             };
           });
 
-        // Create activation codes in batches
-        for (const data of importData) {
-          try {
-            await createActivationCode(data, accessToken);
-          } catch (err) {
-            console.error("Error importing code:", data.code, err);
-          }
-        }
+        // Convert to JSON and log
+        const jsonData = JSON.stringify(importData, null, 2);
+        console.log("CSV converted to JSON:", jsonData);
 
-        toast.success("Data imported successfully");
+        // Call the import API
+        const result = await importActivationCodes(importData, accessToken);
+        console.log("Import API response:", result);
+
+        toast.success(
+          `Successfully imported ${importData.length} activation codes`
+        );
         fetchCodes();
-      } catch (err) {
+      } catch (error) {
+        console.error("Error importing data:", error);
         toast.error("Error importing data");
       } finally {
         setImportLoading(false);
@@ -294,13 +293,7 @@ const ActivationCodeManagement = () => {
     reader.readAsText(file);
   };
 
-  const filteredData = codes.filter(
-    (code) =>
-      code.code.toString().includes(codeSearch) &&
-      code.productName.toLowerCase().includes(productSearch.toLowerCase()) &&
-      code.customerName.toLowerCase().includes(customerSearch.toLowerCase()) &&
-      code.orderNumber.toString().includes(orderSearch)
-  );
+  const filteredData = codes; // Server-side filtering is now handled by the API
 
   const offset = currentPage * itemsPerPage;
   const currentPageData = filteredData.slice(offset, offset + itemsPerPage);
@@ -384,72 +377,86 @@ const ActivationCodeManagement = () => {
                 </p>
               </div>
             </div>
+            {!selectedCode.redeemed &&
+              !redeemedCodes.has(selectedCode.code) && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => handleRedeemCode(selectedCode)}
+                    className="px-6 py-3 rounded-lg font-semibold text-white flex items-center gap-2 mx-auto bg-green-600 hover:bg-green-700"
+                  >
+                    <FaCheck />
+                    Redeem Code
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       ) : (
         <div className="container mx-auto p-4 bg-white rounded shadow-md">
-          <div className="mb-4 flex justify-between items-center">
-            <div className="flex space-x-4 flex-1">
-              <input
-                type="text"
-                placeholder="Search by Code"
-                value={codeSearch}
-                onChange={handleCodeSearchChange}
-                className="px-4 py-2 border rounded w-full"
-              />
-              <input
-                type="text"
-                placeholder="Search by Product"
-                value={productSearch}
-                onChange={handleProductSearchChange}
-                className="px-4 py-2 border rounded w-full"
-              />
-              <input
-                type="text"
-                placeholder="Search by Customer"
-                value={customerSearch}
-                onChange={handleCustomerSearchChange}
-                className="px-4 py-2 border rounded w-full"
-              />
-              <input
-                type="text"
-                placeholder="Search by Order"
-                value={orderSearch}
-                onChange={handleOrderSearchChange}
-                className="px-4 py-2 border rounded w-full"
-              />
-            </div>
-            <div className="flex space-x-2">
-              <label
-                className="px-4 py-2 text-white rounded flex items-center gap-2 cursor-pointer"
-                style={{ backgroundColor: "#439AB8" }}
-              >
-                <FaUpload />
-                {importLoading ? "Importing..." : "Import CSV"}
+          <div className="mb-4">
+            <div className="flex gap-4 items-center justify-between">
+              <div className="flex gap-4 items-center flex-1">
+                <select
+                  value={searchField}
+                  onChange={handleSearchFieldChange}
+                  className="px-4 py-2 border rounded w-48"
+                >
+                  <option value="code">Code</option>
+                  <option value="productName">Product Name</option>
+                  <option value="orderNumber">Order Number</option>
+                  <option value="customerName">Customer Name</option>
+                  <option value="customerEmail">Customer Email</option>
+                  <option value="platform">Platform</option>
+                </select>
                 <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleImportData}
-                  className="hidden"
+                  type="text"
+                  placeholder="Search by..."
+                  value={searchValue}
+                  onChange={handleSearchValueChange}
+                  className="px-4 py-2 border rounded w-64"
                 />
-              </label>
-              <button
-                onClick={handleExportData}
-                disabled={exportLoading}
-                className="px-4 py-2 text-white rounded flex items-center gap-2 disabled:opacity-60"
-                style={{ backgroundColor: "#439AB8" }}
-              >
-                <FaDownload />
-                {exportLoading ? "Exporting..." : "Export CSV"}
-              </button>
-              <button
-                onClick={() => setFormOpen(!formOpen)}
-                className="px-4 py-2 text-white rounded flex items-center gap-2"
-                style={{ backgroundColor: "#439AB8" }}
-              >
-                <FaPlus />
-                {formOpen ? "Hide Form" : "Add Code"}
-              </button>
+                <select
+                  value={redeemStatusFilter}
+                  onChange={(e) => setRedeemStatusFilter(e.target.value)}
+                  className="px-4 py-2 border rounded w-48"
+                >
+                  <option value="">All Status</option>
+                  <option value="true">Redeemed</option>
+                  <option value="false">Not Redeemed</option>
+                </select>
+              </div>
+              <div className="flex space-x-2">
+                <label
+                  className="px-4 py-2 text-white rounded flex items-center gap-2 cursor-pointer"
+                  style={{ backgroundColor: "#439AB8" }}
+                >
+                  <FaUpload />
+                  {importLoading ? "Importing..." : "Import CSV"}
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleImportData}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  onClick={handleExportData}
+                  disabled={exportLoading}
+                  className="px-4 py-2 text-white rounded flex items-center gap-2 disabled:opacity-60"
+                  style={{ backgroundColor: "#439AB8" }}
+                >
+                  <FaDownload />
+                  {exportLoading ? "Exporting..." : "Export CSV"}
+                </button>
+                <button
+                  onClick={() => setFormOpen(!formOpen)}
+                  className="px-4 py-2 text-white rounded flex items-center gap-2"
+                  style={{ backgroundColor: "#439AB8" }}
+                >
+                  <FaPlus />
+                  {formOpen ? "Hide Form" : "Add Code"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -617,176 +624,6 @@ const ActivationCodeManagement = () => {
             </div>
           )}
 
-          {editingCode && (
-            <div className="mb-6 bg-gray-100 p-6 rounded shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-center">
-                Edit Activation Code
-              </h2>
-              <form
-                className="grid grid-cols-2 gap-4"
-                onSubmit={handleEditSubmit}
-              >
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-code"
-                    className="font-medium text-gray-700"
-                  >
-                    6-digit Code
-                  </label>
-                  <input
-                    id="edit-code"
-                    name="code"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g. 123456"
-                    value={editForm.code}
-                    onChange={handleEditChange}
-                    maxLength={6}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-productName"
-                    className="font-medium text-gray-700"
-                  >
-                    Product Name
-                  </label>
-                  <input
-                    id="edit-productName"
-                    name="productName"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Product Name"
-                    value={editForm.productName}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-orderNumber"
-                    className="font-medium text-gray-700"
-                  >
-                    Order Number
-                  </label>
-                  <input
-                    id="edit-orderNumber"
-                    name="orderNumber"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Order Number"
-                    value={editForm.orderNumber}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-customerName"
-                    className="font-medium text-gray-700"
-                  >
-                    Customer Name
-                  </label>
-                  <input
-                    id="edit-customerName"
-                    name="customerName"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Customer Name"
-                    value={editForm.customerName}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-customerEmail"
-                    className="font-medium text-gray-700"
-                  >
-                    Customer Email
-                  </label>
-                  <input
-                    id="edit-customerEmail"
-                    name="customerEmail"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Customer Email"
-                    value={editForm.customerEmail}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                    type="email"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-phoneNumber"
-                    className="font-medium text-gray-700"
-                  >
-                    Phone Number
-                  </label>
-                  <input
-                    id="edit-phoneNumber"
-                    name="phoneNumber"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g. +1234567890"
-                    value={editForm.phoneNumber}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-platform"
-                    className="font-medium text-gray-700"
-                  >
-                    Platform
-                  </label>
-                  <input
-                    id="edit-platform"
-                    name="platform"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Platform"
-                    value={editForm.platform}
-                    onChange={handleEditChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="edit-expiresIn"
-                    className="font-medium text-gray-700"
-                  >
-                    Expiry Date
-                  </label>
-                  <input
-                    id="edit-expiresIn"
-                    name="expiresIn"
-                    type="date"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={editForm.expiresIn}
-                    onChange={handleEditChange}
-                  />
-                </div>
-                <div className="col-span-2 flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={editLoading}
-                    className="flex-1 px-4 py-2 text-white rounded font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "#28a745" }}
-                  >
-                    {editLoading ? "Updating..." : "Update Code"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingCode(null);
-                      setEditForm(initialState);
-                    }}
-                    className="flex-1 px-4 py-2 bg-gray-500 text-white rounded font-semibold"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-300 rounded-lg">
               <thead>
@@ -886,14 +723,7 @@ const ActivationCodeManagement = () => {
                           >
                             <FaEye />
                           </button>
-                          <button
-                            onClick={() => handleEditCode(code)}
-                            className="px-3 py-1 rounded text-white"
-                            style={{ backgroundColor: "#28a745" }}
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </button>
+
                           <button
                             onClick={() => handleDeleteCode(code)}
                             disabled={deleteLoading}
