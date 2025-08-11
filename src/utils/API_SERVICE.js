@@ -3,6 +3,8 @@ import axios from "axios";
 // Use environment variable or fallback to proxy URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
+// console.log(API_BASE_URL);
+
 // Check if we're in production mode
 const isProduction = import.meta.env.PROD;
 
@@ -637,11 +639,34 @@ export const deleteActivationCode = async (id, accessToken) => {
   }
 };
 
+export const editActivationCode = async (id, data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/activation-codes/admin/activation-codes/${id}`;
+  try {
+    const response = await axiosInstance.put(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
 export const importActivationCodes = async (data, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
   const endpoint = "/activation-codes/admin/activation-codes/import";
   try {
     const response = await axiosInstance.post(endpoint, { codes: data });
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+export const sendEMail = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/activation-codes/admin/activation-codes/send-to-user";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;

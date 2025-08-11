@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,6 +9,9 @@ import {
   FaDownload,
   FaUpload,
   FaCheck,
+  FaEllipsisV,
+  FaEdit,
+  FaEnvelope,
 } from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
 import {
@@ -17,15 +20,15 @@ import {
   deleteActivationCode,
   importActivationCodes,
   redeemActivationCode,
+  sendEMail,
+  editActivationCode,
 } from "../../../utils/API_SERVICE";
 
 const initialState = {
-  code: "",
   productName: "",
   orderNumber: "",
   customerName: "",
   customerEmail: "",
-  phoneNumber: "",
   platform: "",
   expiresIn: "",
 };
@@ -49,24 +52,48 @@ const ActivationCodeManagement = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const itemsPerPage = 5;
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [emailToSend, setEmailToSend] = useState(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingCode, setEditingCode] = useState(null);
+  const [editForm, setEditForm] = useState(initialState);
+  const [editLoading, setEditLoading] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [codeToDelete, setCodeToDelete] = useState(null);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     if (accessToken) fetchCodes();
   }, [accessToken]);
 
-  // Debounced search effect
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Optimized debounced search effect with faster response
   useEffect(() => {
     if (accessToken) {
       const timeoutId = setTimeout(() => {
         fetchCodes();
-      }, 500); // 500ms delay
+      }, 300); // Reduced to 300ms for faster response
 
       return () => clearTimeout(timeoutId);
     }
   }, [accessToken, searchValue, redeemStatusFilter]);
 
-  const fetchCodes = async () => {
+  const fetchCodes = useCallback(async () => {
     setFetching(true);
     setFetchError("");
 
@@ -81,17 +108,15 @@ const ActivationCodeManagement = () => {
         queryParams.redeemed = redeemStatusFilter;
       }
 
-      console.log(queryParams);
       const data = await getActivationCodes(accessToken, queryParams);
       setCodes(data);
-      // toast.success("Activation codes fetched successfully");
     } catch (err) {
       setFetchError(err.message);
       toast.error("Error fetching activation codes");
     } finally {
       setFetching(false);
     }
-  };
+  }, [accessToken, searchValue, searchField, redeemStatusFilter]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -100,15 +125,12 @@ const ActivationCodeManagement = () => {
   };
 
   const validate = () => {
-    if (!/^\d{6}$/.test(form.code)) return "Code must be 6 digits.";
     if (!form.productName.trim()) return "Product name is required.";
     if (!form.orderNumber.trim()) return "Order number is required.";
     if (!form.customerName.trim()) return "Customer name is required.";
     if (!form.customerEmail.trim()) return "Customer email is required.";
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.customerEmail))
       return "Invalid email format.";
-    if (!form.phoneNumber.trim()) return "Phone number is required.";
-    if (!/^\+?\d{7,15}$/.test(form.phoneNumber)) return "Invalid phone number.";
     if (!form.platform.trim()) return "Platform is required.";
     if (!form.expiresIn) return "Expiry date is required.";
     return null;
@@ -146,65 +168,175 @@ const ActivationCodeManagement = () => {
     setCurrentPage(data.selected);
   };
 
-  const handleSearchFieldChange = (e) => {
+  const handleSearchFieldChange = useCallback((e) => {
     setSearchField(e.target.value);
-  };
+  }, []);
 
-  const handleSearchValueChange = (e) => {
+  const handleSearchValueChange = useCallback((e) => {
     setSearchValue(e.target.value);
-  };
+  }, []);
 
-  const handleCodePreview = (code) => {
+  const handleCodePreview = useCallback((code) => {
     setSelectedCode(code);
-  };
+  }, []);
 
-  const handleBackToTable = () => {
+  const handleBackToTable = useCallback(() => {
     setSelectedCode(null);
-  };
+  }, []);
 
-  const handleDeleteCode = async (code) => {
-    if (
-      window.confirm("Are you sure you want to delete this activation code?")
-    ) {
-      setDeleteLoading(true);
-      try {
-        await deleteActivationCode(code._id, accessToken);
-        toast.success("Activation code deleted successfully");
-        fetchCodes();
-      } catch (err) {
-        toast.error(err.message || "Error deleting activation code");
-      } finally {
-        setDeleteLoading(false);
-      }
+  const handleDeleteCode = useCallback((code) => {
+    setCodeToDelete(code);
+    setShowDeleteConfirmation(true);
+    setOpenDropdown(null);
+  }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!codeToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      await deleteActivationCode(codeToDelete._id, accessToken);
+      toast.success("Activation code deleted successfully");
+      setShowDeleteConfirmation(false);
+      setCodeToDelete(null);
+      fetchCodes();
+    } catch (err) {
+      toast.error(err.message || "Error deleting activation code");
+      setShowDeleteConfirmation(false);
+      setCodeToDelete(null);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const handleRedeemCode = async (code) => {
-    if (code.redeemed || redeemedCodes.has(code.code)) {
-      toast.info("This code has already been redeemed");
-      return;
-    }
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false);
+    setCodeToDelete(null);
+  };
 
-    if (
-      window.confirm("Are you sure you want to redeem this activation code?")
-    ) {
-      try {
-        await redeemActivationCode(code.code, accessToken);
-        setRedeemedCodes((prev) => new Set([...prev, code.code]));
-        toast.success("Activation code redeemed successfully");
-        setSelectedCode(null); // Go back to table view
-        fetchCodes(); // Refresh data to show updated status
-      } catch (err) {
-        toast.error(err.message || "Error redeeming activation code");
+  const handleRedeemCode = useCallback(
+    async (code) => {
+      if (code.redeemed || redeemedCodes.has(code.code)) {
+        toast.info("This code has already been redeemed");
+        return;
       }
+
+      if (
+        window.confirm("Are you sure you want to redeem this activation code?")
+      ) {
+        try {
+          await redeemActivationCode(code.code, accessToken);
+          setRedeemedCodes((prev) => new Set([...prev, code.code]));
+          toast.success("Activation code redeemed successfully");
+          setSelectedCode(null); // Go back to table view
+          fetchCodes(); // Refresh data to show updated status
+        } catch (err) {
+          toast.error(err.message || "Error redeeming activation code");
+        }
+      }
+    },
+    [accessToken, redeemedCodes, fetchCodes]
+  );
+
+  const handleDropdownToggle = (codeId) => {
+    setOpenDropdown(openDropdown === codeId ? null : codeId);
+  };
+
+  const handleEditCode = (code) => {
+    setEditingCode(code);
+    setEditForm({
+      productName: code.productName || "",
+      orderNumber: code.orderNumber || "",
+      customerName: code.customerName || "",
+      customerEmail: code.customerEmail || "",
+      platform: code.platform || "",
+      expiresIn: code.expiresIn
+        ? new Date(code.expiresIn).toISOString().split("T")[0]
+        : "",
+    });
+    setShowEditForm(true);
+    setOpenDropdown(null);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingCode) return;
+
+    setEditLoading(true);
+    try {
+      const editData = {
+        productName: editForm.productName,
+        customerName: editForm.customerName,
+        customerEmail: editForm.customerEmail,
+        platform: editForm.platform,
+        expiresIn: new Date(editForm.expiresIn),
+      };
+
+      await editActivationCode(editingCode._id, editData, accessToken);
+      toast.success("Activation code updated successfully!");
+      setShowEditForm(false);
+      setEditingCode(null);
+      setEditForm(initialState);
+      fetchCodes(); // Refresh the data
+    } catch (error) {
+      toast.error(error.message || "Error updating activation code");
+    } finally {
+      setEditLoading(false);
     }
+  };
+
+  const handleEditCancel = () => {
+    setShowEditForm(false);
+    setEditingCode(null);
+    setEditForm(initialState);
+  };
+
+  const handleSendMail = (code) => {
+    setEmailToSend(code);
+    setShowEmailConfirmation(true);
+    setOpenDropdown(null);
+  };
+
+  const handleConfirmSendEmail = async () => {
+    if (!emailToSend) return;
+
+    setEmailLoading(true);
+    try {
+      const emailData = {
+        customerEmail: emailToSend.customerEmail,
+        productName: emailToSend.productName,
+        platform: emailToSend.platform,
+        expiresIn: emailToSend.expiresIn,
+      };
+
+      await sendEMail(emailData, accessToken);
+      toast.success("Email sent successfully!");
+      setShowEmailConfirmation(false);
+      setEmailToSend(null);
+    } catch (error) {
+      toast.error(error.message || "Error sending email");
+      setShowEmailConfirmation(false);
+      setEmailToSend(null);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleCancelSendEmail = () => {
+    setShowEmailConfirmation(false);
+    setEmailToSend(null);
+  };
+
+  const handleViewCode = (code) => {
+    handleCodePreview(code);
+    setOpenDropdown(null);
   };
 
   const handleExportData = async () => {
     setExportLoading(true);
     try {
       const csvContent = [
-        "Code,Product Name,Order Number,Customer Name,Customer Email,Phone Number,Platform,Expiry Date,Redeemed",
+        "Code,Product Name,Order Number,Customer Name,Customer Email,Platform,Expiry Date,Redeemed",
         ...codes.map((code) =>
           [
             code.code,
@@ -212,7 +344,6 @@ const ActivationCodeManagement = () => {
             code.orderNumber,
             `"${code.customerName}"`,
             code.customerEmail,
-            code.phoneNumber,
             `"${code.platform}"`,
             code.expiresIn
               ? new Date(code.expiresIn).toLocaleDateString()
@@ -241,6 +372,56 @@ const ActivationCodeManagement = () => {
     }
   };
 
+  const parseCSVLine = (line, headers) => {
+    const values = line.split(",");
+
+    const rowData = {};
+    headers.forEach((header, index) => {
+      rowData[header] = values[index]?.replace(/"/g, "").trim() || "";
+    });
+
+    const expiresInValue =
+      rowData["expiry date"] ||
+      rowData["expiry_date"] ||
+      rowData.expirydate ||
+      rowData["expires in"] ||
+      rowData["expires_in"] ||
+      rowData.expiresin;
+    const redeemedValue = rowData.redeemed || rowData.status;
+
+    return {
+      code:
+        rowData.code ||
+        rowData["activation code"] ||
+        rowData["activation_code"],
+      productName:
+        rowData["product name"] ||
+        rowData["product_name"] ||
+        rowData.productname,
+      orderNumber:
+        rowData["order number"] ||
+        rowData["order_number"] ||
+        rowData.ordernumber,
+      customerName:
+        rowData["customer name"] ||
+        rowData["customer_name"] ||
+        rowData.customername,
+      customerEmail:
+        rowData["customer email"] ||
+        rowData["customer_email"] ||
+        rowData.customeremail,
+      platform: rowData.platform,
+      expiresIn:
+        expiresInValue !== "N/A" && expiresInValue
+          ? new Date(expiresInValue)
+          : null,
+      redeemed:
+        redeemedValue === "Yes" ||
+        redeemedValue === "yes" ||
+        redeemedValue === true,
+    };
+  };
+
   const handleImportData = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -252,51 +433,46 @@ const ActivationCodeManagement = () => {
         const csv = e.target.result;
         const lines = csv.split("\n");
 
-        // Skip header row and process data
+        const headers = lines[0]
+          .split(",")
+          .map((header) => header.replace(/"/g, "").trim().toLowerCase());
+
         const importData = lines
           .slice(1)
           .filter((line) => line.trim())
-          .map((line) => {
-            const values = line.split(",");
-            return {
-              code: values[0],
-              productName: values[1].replace(/"/g, ""),
-              orderNumber: values[2],
-              customerName: values[3].replace(/"/g, ""),
-              customerEmail: values[4],
-              phoneNumber: values[5],
-              platform: values[6].replace(/"/g, ""),
-              expiresIn: values[7] !== "N/A" ? new Date(values[7]) : null,
-            };
-          });
+          .map((line) => parseCSVLine(line, headers));
 
-        // Convert to JSON and log
         const jsonData = JSON.stringify(importData, null, 2);
         console.log("CSV converted to JSON:", jsonData);
+        console.log("CSV converted to JSON:", importData);
 
-        // Call the import API
         const result = await importActivationCodes(importData, accessToken);
         console.log("Import API response:", result);
 
-        toast.success(
-          `Successfully imported ${importData.length} activation codes`
-        );
+        toast.success(result.message);
         fetchCodes();
       } catch (error) {
         console.error("Error importing data:", error);
         toast.error("Error importing data");
       } finally {
         setImportLoading(false);
-        event.target.value = null; // Reset file input
+        event.target.value = null;
       }
     };
     reader.readAsText(file);
   };
 
-  const filteredData = codes; // Server-side filtering is now handled by the API
+  const filteredData = useMemo(() => codes, [codes]);
 
-  const offset = currentPage * itemsPerPage;
-  const currentPageData = filteredData.slice(offset, offset + itemsPerPage);
+  const currentPageData = useMemo(() => {
+    const offset = currentPage * itemsPerPage;
+    return filteredData.slice(offset, offset + itemsPerPage);
+  }, [filteredData, currentPage, itemsPerPage]);
+
+  const pageCount = useMemo(
+    () => Math.ceil(filteredData.length / itemsPerPage),
+    [filteredData.length, itemsPerPage]
+  );
 
   return (
     <div className="container mx-auto p-4">
@@ -342,11 +518,6 @@ const ActivationCodeManagement = () => {
               <div className="mb-4">
                 <p className="text-lg">
                   <strong>Customer Email:</strong> {selectedCode.customerEmail}
-                </p>
-              </div>
-              <div className="mb-4">
-                <p className="text-lg">
-                  <strong>Phone Number:</strong> {selectedCode.phoneNumber}
                 </p>
               </div>
               <div className="mb-4">
@@ -467,21 +638,6 @@ const ActivationCodeManagement = () => {
               </h2>
               <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-1">
-                  <label htmlFor="code" className="font-medium text-gray-700">
-                    6-digit Code
-                  </label>
-                  <input
-                    id="code"
-                    name="code"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g. 123456"
-                    value={form.code}
-                    onChange={handleChange}
-                    maxLength={6}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
                   <label
                     htmlFor="productName"
                     className="font-medium text-gray-700"
@@ -552,37 +708,22 @@ const ActivationCodeManagement = () => {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="phoneNumber"
-                    className="font-medium text-gray-700"
-                  >
-                    Phone Number
-                  </label>
-                  <input
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g. +1234567890"
-                    value={form.phoneNumber}
-                    onChange={handleChange}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label
                     htmlFor="platform"
                     className="font-medium text-gray-700"
                   >
                     Platform
                   </label>
-                  <input
+                  <select
                     id="platform"
                     name="platform"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Platform"
                     value={form.platform}
                     onChange={handleChange}
-                    autoComplete="off"
-                  />
+                  >
+                    <option value="">Select Platform</option>
+                    <option value="shopify">Shopify</option>
+                    <option value="amazon">Amazon</option>
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
@@ -660,19 +801,19 @@ const ActivationCodeManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={8} className="text-center py-4">
                       Loading codes...
                     </td>
                   </tr>
                 ) : fetchError ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4 text-red-500">
+                    <td colSpan={8} className="text-center py-4 text-red-500">
                       {fetchError}
                     </td>
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={8} className="text-center py-4">
                       No activation codes found.
                     </td>
                   </tr>
@@ -714,25 +855,62 @@ const ActivationCodeManagement = () => {
                         </span>
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
-                        <div className="flex gap-2">
+                        <div className="relative dropdown-container">
                           <button
-                            onClick={() => handleCodePreview(code)}
-                            className="px-3 py-1 rounded text-white"
-                            style={{ backgroundColor: "#439AB8" }}
-                            title="View"
+                            onClick={() => handleDropdownToggle(code._id)}
+                            className="px-3 py-1 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                            title="Actions"
                           >
-                            <FaEye />
+                            <FaEllipsisV />
                           </button>
 
-                          <button
-                            onClick={() => handleDeleteCode(code)}
-                            disabled={deleteLoading}
-                            className="px-3 py-1 rounded text-white disabled:opacity-60"
-                            style={{ backgroundColor: "#dc3545" }}
-                            title="Delete"
-                          >
-                            <FaTrash />
-                          </button>
+                          {openDropdown === code._id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                              <div className="py-1">
+                                <button
+                                  onClick={() => handleViewCode(code)}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  <FaEye className="mr-3 h-4 w-4" />
+                                  View
+                                </button>
+                                <button
+                                  onClick={() => handleEditCode(code)}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  <FaEdit className="mr-3 h-4 w-4" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleSendMail(code)}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  <FaEnvelope className="mr-3 h-4 w-4" />
+                                  Send Mail
+                                </button>
+                                {!code.redeemed &&
+                                  !redeemedCodes.has(code.code) && (
+                                    <button
+                                      onClick={() => handleRedeemCode(code)}
+                                      className="flex items-center w-full px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
+                                    >
+                                      <FaCheck className="mr-3 h-4 w-4" />
+                                      Redeem
+                                    </button>
+                                  )}
+                                {!code.redeemed && (
+                                  <button
+                                    onClick={() => handleDeleteCode(code)}
+                                    disabled={deleteLoading}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 disabled:opacity-60"
+                                  >
+                                    <FaTrash className="mr-3 h-4 w-4" />
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -746,7 +924,7 @@ const ActivationCodeManagement = () => {
               previousLabel={"Previous"}
               nextLabel={"Next"}
               breakLabel={"..."}
-              pageCount={Math.ceil(filteredData.length / itemsPerPage)}
+              pageCount={pageCount}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}
@@ -762,6 +940,263 @@ const ActivationCodeManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Form Overlay */}
+      {showEditForm && editingCode && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Edit Activation Code</h3>
+            <form
+              onSubmit={handleEditSubmit}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editProductName"
+                  className="font-medium text-gray-700"
+                >
+                  Product Name
+                </label>
+                <input
+                  id="editProductName"
+                  name="productName"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Product Name"
+                  value={editForm.productName}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editOrderNumber"
+                  className="font-medium text-gray-700"
+                >
+                  Order Number
+                </label>
+                <input
+                  id="editOrderNumber"
+                  name="orderNumber"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Order Number"
+                  value={editForm.orderNumber}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editCustomerName"
+                  className="font-medium text-gray-700"
+                >
+                  Customer Name
+                </label>
+                <input
+                  id="editCustomerName"
+                  name="customerName"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Customer Name"
+                  value={editForm.customerName}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editCustomerEmail"
+                  className="font-medium text-gray-700"
+                >
+                  Customer Email
+                </label>
+                <input
+                  id="editCustomerEmail"
+                  name="customerEmail"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Customer Email"
+                  value={editForm.customerEmail}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                  type="email"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editPlatform"
+                  className="font-medium text-gray-700"
+                >
+                  Platform
+                </label>
+                <select
+                  id="editPlatform"
+                  name="platform"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={editForm.platform}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select Platform</option>
+                  <option value="shopify">Shopify</option>
+                  <option value="amazon">Amazon</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="editExpiresIn"
+                  className="font-medium text-gray-700"
+                >
+                  Expiry Date
+                </label>
+                <input
+                  id="editExpiresIn"
+                  name="expiresIn"
+                  type="date"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={editForm.expiresIn}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="col-span-2 flex gap-3 justify-end mt-4">
+                <button
+                  type="button"
+                  onClick={handleEditCancel}
+                  disabled={editLoading}
+                  className="px-4 py-2 text-gray-600 border border-gray-300  rounded hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2"
+                  style={{ backgroundColor: "#439AB8" }}
+                >
+                  {editLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Code"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Overlay */}
+      {showDeleteConfirmation && codeToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Confirm Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete the activation code{" "}
+              <span className="font-semibold font-mono">
+                {codeToDelete.code}
+              </span>
+              ?
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action cannot be undone and will permanently remove the
+              activation code.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Code"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Confirmation Overlay */}
+      {showEmailConfirmation && emailToSend && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Email Send</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to send an email to{" "}
+              <span className="font-semibold">{emailToSend.customerEmail}</span>
+              ?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelSendEmail}
+                disabled={emailLoading}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSendEmail}
+                disabled={emailLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                style={{ backgroundColor: "#439AB8" }}
+              >
+                {emailLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Sending...
+                  </>
+                ) : (
+                  "Send Email"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   );

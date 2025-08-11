@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,24 +30,20 @@ const UserManagement = () => {
     const fetchUsers = async () => {
       try {
         const users = await getAllUsers(accessToken);
-        setUserData(users);
+        // Add dummy user type data to each user
+        const usersWithType = users.map((user, index) => ({
+          ...user,
+          userType: index % 2 === 0 ? "standard" : "pro", // Alternate between standard and pro
+        }));
+        setUserData(usersWithType);
         toast.success("Users fetched successfully");
-      } catch (error) {
+      } catch {
         toast.error("Error fetching users");
       }
     };
 
     fetchUsers();
   }, [accessToken]);
-
-  const handleStatusChange = (id) => {
-    const updatedUsers = userData.map((user) =>
-      user._id === id
-        ? { ...user, status: user.status === "active" ? "inactive" : "active" }
-        : user
-    );
-    setUserData(updatedUsers);
-  };
 
   const handleDeleteUser = async (userId) => {
     if (
@@ -60,8 +56,8 @@ const UserManagement = () => {
       await deleteUserById(userId, accessToken);
       setUserData((prev) => prev.filter((user) => user._id !== userId));
       toast.success("User deleted successfully");
-    } catch (error) {
-      toast.error(error.message || "Error deleting user");
+    } catch {
+      toast.error("Error deleting user");
     }
   };
 
@@ -76,7 +72,7 @@ const UserManagement = () => {
         );
         setUserData(updatedUsers);
         toast.success("Status updated successfully");
-      } catch (error) {
+      } catch {
         toast.error("Error updating status");
       }
     }
@@ -116,7 +112,7 @@ const UserManagement = () => {
         accessToken
       );
       setSubscriptionHistory(userSubscriptionHistory);
-    } catch (error) {
+    } catch {
       toast.error("Error fetching subscription history");
     }
   };
@@ -179,6 +175,20 @@ const UserManagement = () => {
                   <strong>Status:</strong> {selectedUser.status}
                 </p>
               </div>
+              <div className="mb-4">
+                <p className="text-lg">
+                  <strong>User Type:</strong>{" "}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                      selectedUser.userType === "pro"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {selectedUser.userType}
+                  </span>
+                </p>
+              </div>
             </div>
             <div className="width-600 bg-gray-100 p-6 rounded shadow-md mt-6">
               <h2 className="text-3xl font-bold mb-6 text-center">
@@ -223,10 +233,7 @@ const UserManagement = () => {
                   </thead>
                   <tbody>
                     {filteredSubscriptionHistory.map((history) => (
-                      <tr
-                        key={history._id}
-                        className="hover:bg-gray-50"
-                      >
+                      <tr key={history._id} className="hover:bg-gray-50">
                         <td className="py-2 px-4 border-b border-gray-300">
                           {history._id}
                         </td>
@@ -296,7 +303,7 @@ const UserManagement = () => {
               <thead>
                 <tr>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    User ID
+                    Email
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     First Name
@@ -305,10 +312,10 @@ const UserManagement = () => {
                     Last Name
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Email
+                    Status
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Status
+                    Tags
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     Actions
@@ -317,12 +324,9 @@ const UserManagement = () => {
               </thead>
               <tbody>
                 {currentPageData.map((user) => (
-                  <tr
-                    key={user._id}
-                    className="hover:bg-gray-50"
-                  >
+                  <tr key={user._id} className="hover:bg-gray-50">
                     <td className="py-2 px-4 border-b border-gray-300">
-                      {user._id}
+                      {user.email}
                     </td>
                     <td className="py-2 px-4 border-b border-gray-300">
                       {user.firstname}
@@ -331,10 +335,18 @@ const UserManagement = () => {
                       {user.lastname}
                     </td>
                     <td className="py-2 px-4 border-b border-gray-300">
-                      {user.email}
+                      {user.status}
                     </td>
                     <td className="py-2 px-4 border-b border-gray-300">
-                      {user.status}
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          user.userType === "pro"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {user.userType}
+                      </span>
                     </td>
                     <td className="py-2 px-4 border-b border-gray-300 flex gap-2">
                       <button
