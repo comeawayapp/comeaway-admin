@@ -1,8 +1,8 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaEye, FaTrash } from "react-icons/fa";
+import { FaEye, FaTrash, FaSearch } from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
 import {
   getAllUsers,
@@ -14,58 +14,97 @@ import {
 const UserManagement = () => {
   const { accessToken } = useContext(AuthContext);
   const [currentPage, setCurrentPage] = useState(0);
-  const [userIdSearch, setUserIdSearch] = useState("");
   const [userNameSearch, setUserNameSearch] = useState("");
+  const [userTypeFilter, setUserTypeFilter] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [subscriptionSearch, setSubscriptionSearch] = useState("");
   const [transactionIdSearch, setTransactionIdSearch] = useState("");
   const [userData, setUserData] = useState([]);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState("");
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const itemsPerPage = 5;
 
   console.log(subscriptionHistory);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const users = await getAllUsers(accessToken);
-        // Add dummy user type data to each user
-        const usersWithType = users.map((user, index) => ({
-          ...user,
-          userType: index % 2 === 0 ? "standard" : "pro", // Alternate between standard and pro
-        }));
-        setUserData(usersWithType);
-        toast.success("Users fetched successfully");
-      } catch {
-        toast.error("Error fetching users");
-      }
-    };
-
-    fetchUsers();
+    if (accessToken) fetchUsers();
   }, [accessToken]);
 
-  const handleDeleteUser = async (userId) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this user? This action cannot be undone."
-      )
-    )
-      return;
+  // Optimized debounced search effect with faster response
+  useEffect(() => {
+    if (accessToken) {
+      const timeoutId = setTimeout(() => {
+        fetchUsers();
+      }, 300); // Reduced to 300ms for faster response
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [accessToken, userNameSearch, userTypeFilter]);
+
+  const fetchUsers = useCallback(async () => {
+    setFetching(true);
+    setFetchError("");
+
     try {
-      await deleteUserById(userId, accessToken);
-      setUserData((prev) => prev.filter((user) => user._id !== userId));
+      const queryParams = {};
+
+      if (userNameSearch.trim()) {
+        queryParams.query = userNameSearch.trim();
+      }
+
+      if (userTypeFilter) {
+        queryParams.type = userTypeFilter;
+      }
+
+      const users = await getAllUsers(accessToken, queryParams);
+      console.log("users", users.users);
+      setUserData(users.users);
+    } catch (err) {
+      setFetchError(err.message);
+      toast.error("Error fetching users");
+    } finally {
+      setFetching(false);
+    }
+  }, [accessToken, userNameSearch, userTypeFilter]);
+
+  const handleDeleteUser = (userId) => {
+    const user = userData.find((u) => u._id === userId);
+    setUserToDelete(user);
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteUserById(userToDelete._id, accessToken);
+      setUserData((prev) =>
+        prev.filter((user) => user._id !== userToDelete._id)
+      );
       toast.success("User deleted successfully");
+      setShowDeleteConfirmation(false);
+      setUserToDelete(null);
     } catch {
       toast.error("Error deleting user");
+      setShowDeleteConfirmation(false);
+      setUserToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false);
+    setUserToDelete(null);
   };
 
   const handleStatusUpdate = async () => {
     if (selectedUser) {
       try {
         await updateUserStatus(selectedUser._id, selectedStatus, accessToken);
-        const updatedUsers = userData.map((user) =>
+        const updatedUsers = userData?.map((user) =>
           user._id === selectedUser._id
             ? { ...user, status: selectedStatus }
             : user
@@ -82,12 +121,12 @@ const UserManagement = () => {
     setCurrentPage(data.selected);
   };
 
-  const handleUserIdSearchChange = (e) => {
-    setUserIdSearch(e.target.value);
-  };
-
   const handleUserNameSearchChange = (e) => {
     setUserNameSearch(e.target.value);
+  };
+
+  const handleUserTypeFilterChange = (e) => {
+    setUserTypeFilter(e.target.value);
   };
 
   const handleSubscriptionSearchChange = (e) => {
@@ -122,15 +161,7 @@ const UserManagement = () => {
     setSubscriptionHistory([]);
   };
 
-  const filteredData = userData.filter(
-    (user) =>
-      user._id.toString().includes(userIdSearch) &&
-      (
-        user.firstname.toLowerCase() +
-        " " +
-        user.lastname.toLowerCase()
-      ).includes(userNameSearch.toLowerCase())
-  );
+  // Filter data locally for display
 
   const filteredSubscriptionHistory = subscriptionHistory.filter(
     (history) =>
@@ -139,7 +170,7 @@ const UserManagement = () => {
   );
 
   const offset = currentPage * itemsPerPage;
-  const currentPageData = filteredData.slice(offset, offset + itemsPerPage);
+  const currentPageData = userData?.slice(offset, offset + itemsPerPage);
 
   return (
     <div className="container mx-auto p-4">
@@ -161,7 +192,7 @@ const UserManagement = () => {
               </h2>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>User ID:</strong> {selectedUser._id}
+                  <strong>Email:</strong> {selectedUser.email}
                 </p>
               </div>
               <div className="mb-4">
@@ -180,7 +211,7 @@ const UserManagement = () => {
                   <strong>User Type:</strong>{" "}
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      selectedUser.userType === "pro"
+                      selectedUser.userType === "Pro"
                         ? "bg-yellow-100 text-yellow-800"
                         : "bg-green-100 text-green-800"
                     }`}
@@ -282,21 +313,28 @@ const UserManagement = () => {
         </div>
       ) : (
         <div className="container mx-auto p-4 bg-white rounded shadow-md">
-          <div className="mb-4 flex justify-between space-x-4">
-            <input
-              type="text"
-              placeholder="Search by User ID"
-              value={userIdSearch}
-              onChange={handleUserIdSearchChange}
-              className="px-4 py-2 border rounded w-full"
-            />
-            <input
-              type="text"
-              placeholder="Search by User Name"
-              value={userNameSearch}
-              onChange={handleUserNameSearchChange}
-              className="px-4 py-2 border rounded w-full"
-            />
+          <div className="mb-4 flex gap-4">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search by first name, last name or email"
+                value={userNameSearch}
+                onChange={handleUserNameSearchChange}
+                className="pl-10 pr-4 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              />
+            </div>
+            <div className="flex-1">
+              <select
+                value={userTypeFilter}
+                onChange={handleUserTypeFilterChange}
+                className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              >
+                <option value="">All User Types</option>
+                <option value="standard">Standard</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-300 rounded-lg">
@@ -315,7 +353,10 @@ const UserManagement = () => {
                     Status
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Tags
+                    Type
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                    Activation Method
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     Actions
@@ -323,50 +364,73 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentPageData.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b border-gray-300">
-                      {user.email}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-300">
-                      {user.firstname}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-300">
-                      {user.lastname}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-300">
-                      {user.status}
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-300">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          user.userType === "pro"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {user.userType}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b border-gray-300 flex gap-2">
-                      <button
-                        onClick={() => handleUserPreview(user)}
-                        className="px-3 py-1 rounded text-white"
-                        style={{ backgroundColor: "#439AB8" }}
-                        title="View"
-                      >
-                        <FaEye />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user._id)}
-                        className="px-3 py-1 rounded text-white bg-red-600 hover:bg-red-700"
-                        title="Delete"
-                      >
-                        <FaTrash />
-                      </button>
+                {fetching ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4">
+                      Loading users...
                     </td>
                   </tr>
-                ))}
+                ) : fetchError ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4 text-red-500">
+                      {fetchError}
+                    </td>
+                  </tr>
+                ) : currentPageData.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-4">
+                      No users found.
+                    </td>
+                  </tr>
+                ) : (
+                  currentPageData.map((user) => (
+                    <tr key={user._id} className="hover:bg-gray-50">
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {user.email}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {user.firstname}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {user.lastname}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {user.status}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            user.userType === "Pro"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {user.userType}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {user.activationMethod}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300 flex gap-2">
+                        <button
+                          onClick={() => handleUserPreview(user)}
+                          className="px-3 py-1 rounded text-white"
+                          style={{ backgroundColor: "#439AB8" }}
+                          title="View"
+                        >
+                          <FaEye />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="px-3 py-1 rounded text-white bg-red-600 hover:bg-red-700"
+                          title="Delete"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -375,7 +439,7 @@ const UserManagement = () => {
               previousLabel={"Previous"}
               nextLabel={"Next"}
               breakLabel={"..."}
-              pageCount={Math.ceil(filteredData.length / itemsPerPage)}
+              pageCount={Math.ceil(userData.length / itemsPerPage)}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}
@@ -391,6 +455,43 @@ const UserManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Overlay */}
+      {showDeleteConfirmation && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Confirm User Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete the user{" "}
+              <span className="font-semibold">
+                {userToDelete.firstname} {userToDelete.lastname}
+              </span>
+              ?
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action cannot be undone and will permanently remove the user
+              account.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer />
     </div>
   );

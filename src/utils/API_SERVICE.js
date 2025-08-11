@@ -567,12 +567,12 @@ export const getAllUsersSubscription = async (accessToken) => {
     throw error;
   }
 };
-export const getAllUsers = async (accessToken) => {
+export const getAllUsers = async (accessToken, query = {}) => {
   const axiosInstance = createAxiosInstance(accessToken);
   const endpoint = "/auth/all-user";
 
   try {
-    const response = await axiosInstance.get(endpoint);
+    const response = await axiosInstance.get(endpoint, { params: query });
     return response.data;
   } catch (error) {
     console.error("Error fetching all users:", {
