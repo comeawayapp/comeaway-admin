@@ -380,6 +380,11 @@ const ActivationCodeManagement = () => {
       rowData[header] = values[index]?.replace(/"/g, "").trim() || "";
     });
 
+    const expiryDateValue = (date) => {
+      const [day, month, year] = date.split("/");
+      return new Date(year, month - 1, day);
+    };
+
     const expiresInValue =
       rowData["expiry date"] ||
       rowData["expiry_date"] ||
@@ -413,7 +418,7 @@ const ActivationCodeManagement = () => {
       platform: rowData.platform,
       expiresIn:
         expiresInValue !== "N/A" && expiresInValue
-          ? new Date(expiresInValue)
+          ? expiryDateValue(expiresInValue)
           : null,
       redeemed:
         redeemedValue === "Yes" ||
