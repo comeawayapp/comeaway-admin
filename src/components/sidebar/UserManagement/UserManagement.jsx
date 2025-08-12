@@ -26,7 +26,7 @@ const UserManagement = () => {
   const [fetchError, setFetchError] = useState("");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
 
   console.log(subscriptionHistory);
 
@@ -83,7 +83,9 @@ const UserManagement = () => {
     try {
       await deleteUserById(userToDelete._id, accessToken);
       setUserData((prev) =>
-        prev.filter((user) => user._id !== userToDelete._id)
+        Array.isArray(prev)
+          ? prev.filter((user) => user._id !== userToDelete._id)
+          : []
       );
       toast.success("User deleted successfully");
       setShowDeleteConfirmation(false);
@@ -104,11 +106,13 @@ const UserManagement = () => {
     if (selectedUser) {
       try {
         await updateUserStatus(selectedUser._id, selectedStatus, accessToken);
-        const updatedUsers = userData?.map((user) =>
-          user._id === selectedUser._id
-            ? { ...user, status: selectedStatus }
-            : user
-        );
+        const updatedUsers = Array.isArray(userData)
+          ? userData.map((user) =>
+              user._id === selectedUser._id
+                ? { ...user, status: selectedStatus }
+                : user
+            )
+          : [];
         setUserData(updatedUsers);
         toast.success("Status updated successfully");
       } catch {
@@ -170,7 +174,9 @@ const UserManagement = () => {
   );
 
   const offset = currentPage * itemsPerPage;
-  const currentPageData = userData?.slice(offset, offset + itemsPerPage);
+  const currentPageData = Array.isArray(userData)
+    ? userData.slice(offset, offset + itemsPerPage)
+    : [];
 
   return (
     <div className="container mx-auto p-4">
@@ -439,7 +445,9 @@ const UserManagement = () => {
               previousLabel={"Previous"}
               nextLabel={"Next"}
               breakLabel={"..."}
-              pageCount={Math.ceil(userData.length / itemsPerPage)}
+              pageCount={Math.ceil(
+                (Array.isArray(userData) ? userData.length : 0) / itemsPerPage
+              )}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}
