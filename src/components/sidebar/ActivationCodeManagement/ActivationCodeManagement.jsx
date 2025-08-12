@@ -855,7 +855,8 @@ const ActivationCodeManagement = () => {
                         </span>
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
-                        <div className="relative dropdown-container">
+                        {/* relative dropdown-container */}
+                        <div className="dropdown-container">
                           <button
                             onClick={() => handleDropdownToggle(code._id)}
                             className="px-3 py-1 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100"
@@ -865,7 +866,7 @@ const ActivationCodeManagement = () => {
                           </button>
 
                           {openDropdown === code._id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 min-w-max max-h-60 overflow-y-auto">
                               <div className="py-1">
                                 <button
                                   onClick={() => handleViewCode(code)}
