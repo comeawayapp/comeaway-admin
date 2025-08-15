@@ -121,6 +121,7 @@ console.log(profile);
                     <input
                         type="email"
                         name="email"
+                        disabled
                         placeholder="Email"
                         value={profile.email}
                         onChange={handleInputChange}

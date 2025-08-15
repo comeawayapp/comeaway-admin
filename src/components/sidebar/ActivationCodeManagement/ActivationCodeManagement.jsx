@@ -2,6 +2,8 @@ import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { createPortal } from "react-dom";
+import PropTypes from "prop-types";
 import {
   FaEye,
   FaPlus,
@@ -39,6 +41,7 @@ const ActivationCodeManagement = () => {
   const [searchField, setSearchField] = useState("code");
   const [searchValue, setSearchValue] = useState("");
   const [redeemStatusFilter, setRedeemStatusFilter] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("");
   const [form, setForm] = useState(initialState);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -53,6 +56,7 @@ const ActivationCodeManagement = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [emailToSend, setEmailToSend] = useState(null);
   const [emailLoading, setEmailLoading] = useState(false);
@@ -64,23 +68,134 @@ const ActivationCodeManagement = () => {
   const [codeToDelete, setCodeToDelete] = useState(null);
   const itemsPerPage = 20;
 
+  // Portal-based dropdown component
+  const DropdownPortal = ({ code, isOpen, onClose, position }) => {
+    if (!isOpen) return null;
+
+    return createPortal(
+      <div
+        className="fixed w-48 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden portal-dropdown"
+        style={{
+          left: position.x,
+          top: position.y,
+        }}
+        onClick={handleDropdownClick}
+      >
+        {/* Dropdown header */}
+        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+          <p className="text-xs font-medium text-gray-600">
+            Actions for {code.code}
+          </p>
+        </div>
+
+        <div className="py-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewCode(code);
+              onClose();
+            }}
+            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+          >
+            <FaEye className="mr-3 h-4 w-4 text-gray-500" />
+            View Details
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditCode(code);
+              onClose();
+            }}
+            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-150"
+          >
+            <FaEdit className="mr-3 h-4 w-4 text-gray-500" />
+            Edit Code
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSendMail(code);
+              onClose();
+            }}
+            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-150"
+          >
+            <FaEnvelope className="mr-3 h-4 w-4 text-gray-500" />
+            Send Email
+          </button>
+          {!code.redeemed && !redeemedCodes.has(code.code) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRedeemCode(code);
+                onClose();
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-150 border-t border-gray-100"
+            >
+              <FaCheck className="mr-3 h-4 w-4 text-green-500" />
+              Redeem Code
+            </button>
+          )}
+          {!code.redeemed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteCode(code);
+                onClose();
+              }}
+              disabled={deleteLoading}
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150 border-t border-gray-100 disabled:opacity-50"
+            >
+              <FaTrash className="mr-3 h-4 w-4 text-red-500" />
+              Delete Code
+            </button>
+          )}
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  // Add PropTypes validation
+  DropdownPortal.propTypes = {
+    code: PropTypes.shape({
+      code: PropTypes.string.isRequired,
+      redeemed: PropTypes.bool.isRequired,
+    }).isRequired,
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    position: PropTypes.shape({
+      x: PropTypes.number.isRequired,
+      y: PropTypes.number.isRequired,
+    }).isRequired,
+  };
+
   useEffect(() => {
     if (accessToken) fetchCodes();
   }, [accessToken]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - temporarily disabled for debugging
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
-        setOpenDropdown(null);
-      }
+    const handleClickOutside = () => {
+      // Only close if we have an open dropdown
+      if (openDropdown === null) return;
+
+      // Temporarily disable auto-closing to debug the issue
+      // Check if click is on dropdown container or the portal dropdown
+      // const isDropdownContainer = event.target.closest(".dropdown-container");
+      // const isPortalDropdown = event.target.closest(".portal-dropdown");
+
+      // if (!isDropdownContainer && !isPortalDropdown) {
+      //   setTimeout(() => {
+      //     setOpenDropdown(null);
+      //   }, 10);
+      // }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [openDropdown]);
 
   // Optimized debounced search effect with faster response
   useEffect(() => {
@@ -91,7 +206,7 @@ const ActivationCodeManagement = () => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [accessToken, searchValue, redeemStatusFilter]);
+  }, [accessToken, searchValue, redeemStatusFilter, platformFilter]);
 
   const fetchCodes = useCallback(async () => {
     setFetching(true);
@@ -108,6 +223,10 @@ const ActivationCodeManagement = () => {
         queryParams.redeemed = redeemStatusFilter;
       }
 
+      if (platformFilter) {
+        queryParams.platform = platformFilter;
+      }
+
       const data = await getActivationCodes(accessToken, queryParams);
       setCodes(data);
     } catch (err) {
@@ -116,7 +235,13 @@ const ActivationCodeManagement = () => {
     } finally {
       setFetching(false);
     }
-  }, [accessToken, searchValue, searchField, redeemStatusFilter]);
+  }, [
+    accessToken,
+    searchValue,
+    searchField,
+    redeemStatusFilter,
+    platformFilter,
+  ]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -238,8 +363,48 @@ const ActivationCodeManagement = () => {
     [accessToken, redeemedCodes, fetchCodes]
   );
 
-  const handleDropdownToggle = (codeId) => {
-    setOpenDropdown(openDropdown === codeId ? null : codeId);
+  const handleDropdownToggle = (codeId, event) => {
+    if (openDropdown === codeId) {
+      setOpenDropdown(null);
+      return;
+    }
+
+    // Calculate position for the dropdown
+    if (event) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let x = rect.right + 10; // 10px to the right of button
+      let y = rect.bottom + 10; // 10px below button
+
+      // If dropdown would go off the right edge, position it to the left
+      if (x + 192 > viewportWidth) {
+        // 192px is dropdown width
+        x = rect.left - 192 - 10;
+      }
+
+      // If dropdown would go off the bottom edge, position it above
+      if (y + 300 > viewportHeight) {
+        // 300px estimated height
+        y = rect.top - 300 - 10;
+      }
+
+      // Ensure dropdown doesn't go off the left edge
+      if (x < 10) {
+        x = 10;
+      }
+
+      setDropdownPosition({ x, y });
+    }
+
+    setOpenDropdown(codeId);
+  };
+
+  // Prevent dropdown from closing when clicking inside it
+  const handleDropdownClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
   };
 
   const handleEditCode = (code) => {
@@ -568,7 +733,7 @@ const ActivationCodeManagement = () => {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="container  mx-auto p-4 bg-white rounded shadow-md">
           <div className="mb-4">
             <div className="flex gap-4 items-center justify-between">
               <div className="flex gap-4 items-center flex-1">
@@ -582,7 +747,6 @@ const ActivationCodeManagement = () => {
                   <option value="orderNumber">Order Number</option>
                   <option value="customerName">Customer Name</option>
                   <option value="customerEmail">Customer Email</option>
-                  <option value="platform">Platform</option>
                 </select>
                 <input
                   type="text"
@@ -599,6 +763,15 @@ const ActivationCodeManagement = () => {
                   <option value="">All Status</option>
                   <option value="true">Redeemed</option>
                   <option value="false">Not Redeemed</option>
+                </select>
+                <select
+                  value={platformFilter}
+                  onChange={(e) => setPlatformFilter(e.target.value)}
+                  className="px-4 py-2 border rounded w-48"
+                >
+                  <option value="">All Platforms</option>
+                  <option value="Shopify">Shopify</option>
+                  <option value="Amazon">Amazon</option>
                 </select>
               </div>
               <div className="flex space-x-2">
@@ -726,8 +899,8 @@ const ActivationCodeManagement = () => {
                     onChange={handleChange}
                   >
                     <option value="">Select Platform</option>
-                    <option value="shopify">Shopify</option>
-                    <option value="amazon">Amazon</option>
+                    <option value="Shopify">Shopify</option>
+                    <option value="Amazon">Amazon</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -799,6 +972,9 @@ const ActivationCodeManagement = () => {
                     Redeemed
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                    Access Code Sent
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     Actions
                   </th>
                 </tr>
@@ -806,25 +982,25 @@ const ActivationCodeManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-4">
+                    <td colSpan={9} className="text-center py-4">
                       Loading codes...
                     </td>
                   </tr>
                 ) : fetchError ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-4 text-red-500">
+                    <td colSpan={9} className="text-center py-4 text-red-500">
                       {fetchError}
                     </td>
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-4">
+                    <td colSpan={9} className="text-center py-4">
                       No activation codes found.
                     </td>
                   </tr>
                 ) : (
                   currentPageData.map((code) => (
-                    <tr key={code._id} className="hover:bg-gray-50">
+                    <tr key={code._id} className="relative hover:bg-gray-50">
                       <td className="py-2 px-4 border-b border-gray-300 font-mono font-semibold text-blue-700">
                         {code.code}
                       </td>
@@ -860,63 +1036,28 @@ const ActivationCodeManagement = () => {
                         </span>
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-xs font-bold ${
+                            code.accessCodeSentAt
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {code.accessCodeSentAt ? "Yes" : "No"}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
                         {/* relative dropdown-container */}
                         <div className="dropdown-container">
                           <button
-                            onClick={() => handleDropdownToggle(code._id)}
+                            onClick={(event) =>
+                              handleDropdownToggle(code._id, event)
+                            }
                             className="px-3 py-1 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                             title="Actions"
                           >
                             <FaEllipsisV />
                           </button>
-
-                          {openDropdown === code._id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200 min-w-max max-h-60 overflow-y-auto">
-                              <div className="py-1">
-                                <button
-                                  onClick={() => handleViewCode(code)}
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FaEye className="mr-3 h-4 w-4" />
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleEditCode(code)}
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FaEdit className="mr-3 h-4 w-4" />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleSendMail(code)}
-                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                >
-                                  <FaEnvelope className="mr-3 h-4 w-4" />
-                                  Send Mail
-                                </button>
-                                {!code.redeemed &&
-                                  !redeemedCodes.has(code.code) && (
-                                    <button
-                                      onClick={() => handleRedeemCode(code)}
-                                      className="flex items-center w-full px-4 py-2 text-sm text-green-600 hover:bg-gray-100"
-                                    >
-                                      <FaCheck className="mr-3 h-4 w-4" />
-                                      Redeem
-                                    </button>
-                                  )}
-                                {!code.redeemed && (
-                                  <button
-                                    onClick={() => handleDeleteCode(code)}
-                                    disabled={deleteLoading}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 disabled:opacity-60"
-                                  >
-                                    <FaTrash className="mr-3 h-4 w-4" />
-                                    Delete
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -1065,8 +1206,8 @@ const ActivationCodeManagement = () => {
                   }
                 >
                   <option value="">Select Platform</option>
-                  <option value="shopify">Shopify</option>
-                  <option value="amazon">Amazon</option>
+                  <option value="Shopify">Shopify</option>
+                  <option value="Amazon">Amazon</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -1201,6 +1342,16 @@ const ActivationCodeManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Portal-based dropdown - renders outside table hierarchy */}
+      {openDropdown && (
+        <DropdownPortal
+          code={codes.find((code) => code._id === openDropdown)}
+          isOpen={true}
+          onClose={() => setOpenDropdown(null)}
+          position={dropdownPosition}
+        />
       )}
 
       <ToastContainer />

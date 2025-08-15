@@ -154,7 +154,8 @@ const UserManagement = () => {
         user._id,
         accessToken
       );
-      setSubscriptionHistory(userSubscriptionHistory);
+      console.log("userSubscriptionHistory", userSubscriptionHistory);
+      setSubscriptionHistory(userSubscriptionHistory.subscription);
     } catch {
       toast.error("Error fetching subscription history");
     }
@@ -167,7 +168,7 @@ const UserManagement = () => {
 
   // Filter data locally for display
 
-  const filteredSubscriptionHistory = subscriptionHistory.filter(
+  const filteredSubscriptionHistory = subscriptionHistory?.filter(
     (history) =>
       history.plan.toLowerCase().includes(subscriptionSearch.toLowerCase()) &&
       history._id.toString().includes(transactionIdSearch)
@@ -269,7 +270,14 @@ const UserManagement = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSubscriptionHistory.map((history) => (
+                    {filteredSubscriptionHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-4">
+                          No subscription history found.
+                        </td>
+                      </tr>
+                    ) : (
+                    filteredSubscriptionHistory.map((history) => (
                       <tr key={history._id} className="hover:bg-gray-50">
                         <td className="py-2 px-4 border-b border-gray-300">
                           {history._id}
@@ -285,9 +293,10 @@ const UserManagement = () => {
                         </td>
                         <td className="py-2 px-4 border-b border-gray-300">
                           {new Date(history.endDate).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
