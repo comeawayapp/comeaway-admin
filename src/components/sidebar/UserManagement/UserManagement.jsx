@@ -7,8 +7,10 @@ import { AuthContext } from "../../../context/authContext";
 import {
   getAllUsers,
   updateUserStatus,
+  updateUserType,
   getUserSubscriptionDetails,
   deleteUserById,
+  updateUserPlanStatus,
 } from "../../../utils/API_SERVICE";
 
 const UserManagement = () => {
@@ -18,6 +20,7 @@ const UserManagement = () => {
   const [userTypeFilter, setUserTypeFilter] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedUserType, setSelectedUserType] = useState("");
   const [subscriptionSearch, setSubscriptionSearch] = useState("");
   const [transactionIdSearch, setTransactionIdSearch] = useState("");
   const [userData, setUserData] = useState([]);
@@ -121,6 +124,26 @@ const UserManagement = () => {
     }
   };
 
+  const handleUserTypeUpdate = async () => {
+    if (selectedUser && selectedUserType) {
+      try {
+        await updateUserPlanStatus(selectedUser._id, selectedUserType, accessToken);
+        const updatedUsers = Array.isArray(userData)
+          ? userData.map((user) =>
+              user._id === selectedUser._id
+                ? { ...user, userType: selectedUserType }
+                : user
+            )
+          : [];
+        setUserData(updatedUsers);
+        toast.success("User type updated successfully");
+        setSelectedUserType("");
+      } catch {
+        toast.error("Error updating user type");
+      }
+    }
+  };
+
   const handlePageClick = (data) => {
     setCurrentPage(data.selected);
   };
@@ -148,6 +171,7 @@ const UserManagement = () => {
     // console.log(selectedUser);
 
     setSelectedStatus(user.status);
+    setSelectedUserType(user.isPro ? "pro" : "standard");
     console.log(user._id);
     try {
       const userSubscriptionHistory = await getUserSubscriptionDetails(
@@ -277,22 +301,22 @@ const UserManagement = () => {
                         </td>
                       </tr>
                     ) : (
-                    filteredSubscriptionHistory.map((history) => (
-                      <tr key={history._id} className="hover:bg-gray-50">
-                        <td className="py-2 px-4 border-b border-gray-300">
-                          {history._id}
-                        </td>
-                        <td className="py-2 px-4 border-b border-gray-300">
-                          {history.plan}
-                        </td>
-                        <td className="py-2 px-4 border-b border-gray-300">
-                          {history.status}
-                        </td>
-                        <td className="py-2 px-4 border-b border-gray-300">
-                          {new Date(history.startDate).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 px-4 border-b border-gray-300">
-                          {new Date(history.endDate).toLocaleDateString()}
+                      filteredSubscriptionHistory.map((history) => (
+                        <tr key={history._id} className="hover:bg-gray-50">
+                          <td className="py-2 px-4 border-b border-gray-300">
+                            {history._id}
+                          </td>
+                          <td className="py-2 px-4 border-b border-gray-300">
+                            {history.plan}
+                          </td>
+                          <td className="py-2 px-4 border-b border-gray-300">
+                            {history.status}
+                          </td>
+                          <td className="py-2 px-4 border-b border-gray-300">
+                            {new Date(history.startDate).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 px-4 border-b border-gray-300">
+                            {new Date(history.endDate).toLocaleDateString()}
                           </td>
                         </tr>
                       ))
@@ -318,6 +342,29 @@ const UserManagement = () => {
               </select>
               <button
                 onClick={handleStatusUpdate}
+                className="px-4 py-2 text-white rounded w-full"
+                style={{ backgroundColor: "#439AB8" }}
+              >
+                Update
+              </button>
+            </div>
+
+            <div className="bg-gray-100 p-6 rounded shadow-md mt-4">
+              <h2 className="text-2xl font-bold mb-4">Update User Type</h2>
+              <label className="block mb-2 text-lg font-medium">
+                <strong>User Type:</strong>
+              </label>
+              <select
+                value={selectedUserType}
+                // value={sel}
+                onChange={(e) => setSelectedUserType(e.target.value)}
+                className="px-4 py-2 border rounded w-full mb-4"
+              >
+                <option value="standard">Standard</option>
+                <option value="pro">Pro</option>
+              </select>
+              <button
+                onClick={handleUserTypeUpdate}
                 className="px-4 py-2 text-white rounded w-full"
                 style={{ backgroundColor: "#439AB8" }}
               >

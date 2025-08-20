@@ -1,19 +1,20 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../context/authContext';
-import Navbar from '../pages/navbar/Navbar';
-import Sidebar from './sidebar/Sidebar';
-import Dashboard from './sidebar/dashboard/Dashboard';
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../context/authContext";
+import Navbar from "../pages/navbar/Navbar";
+import Sidebar from "./sidebar/Sidebar";
+import Dashboard from "./sidebar/dashboard/Dashboard";
 // import Categories from './sidebar/Categories/Categories';
-import SoundManagement from './sidebar/SoundManagement/SoundManagement';
+import SoundManagement from "./sidebar/SoundManagement/SoundManagement";
 // import SubscriptionManagement from './sidebar/SubscriptionManagement/SubscriptionManagement';
-import UserManagement from './sidebar/UserManagement/UserManagement';
-import Settings from './sidebar/Settings/Settings';
-import CategoryManagement from './sidebar/CategoryManagment/CategoryManagement';
-import ActivationCodeManagement from './sidebar/ActivationCodeManagement/ActivationCodeManagement';
-
+import UserManagement from "./sidebar/UserManagement/UserManagement";
+import Settings from "./sidebar/Settings/Settings";
+import CategoryManagement from "./sidebar/CategoryManagment/CategoryManagement";
+import ActivationCodeManagement from "./sidebar/ActivationCodeManagement/ActivationCodeManagement";
+import DiscountManagement from "./sidebar/DiscountManagement/DiscountManagement";
+import PriceManagement from "./sidebar/PriceManagement/PriceManagement";
 function Home() {
   const { accessToken } = useContext(AuthContext);
-  const [selectedContent, setSelectedContent] = useState('Dashboard');
+  const [selectedContent, setSelectedContent] = useState("Dashboard");
 
   const handleMenuItemClick = (content) => {
     setSelectedContent(content);
@@ -21,20 +22,24 @@ function Home() {
 
   const renderContent = () => {
     switch (selectedContent) {
-      case 'Dashboard':
+      case "Dashboard":
         return <Dashboard />;
-      case 'Categories':
+      case "Categories":
         return <CategoryManagement />;
-      case 'SoundManagement':
+      case "SoundManagement":
         return <SoundManagement />;
       // case 'Subscription':
       //   return <SubscriptionManagement />;
-      case 'UserManagement':
+      case "UserManagement":
         return <UserManagement />;
-      case 'Settings':
+      case "Settings":
         return <Settings />;
-      case 'ActivationCodes':
+      case "ActivationCodes":
         return <ActivationCodeManagement accessToken={accessToken} />;
+      case "DiscountManagement":
+        return <DiscountManagement />;
+      case "PriceManagement":
+        return <PriceManagement />;
       default:
         return <Dashboard />;
     }
@@ -45,9 +50,7 @@ function Home() {
       <Navbar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar onMenuItemClick={handleMenuItemClick} />
-        <div className="flex-grow p-4 overflow-y-auto">
-          {renderContent()}
-        </div>
+        <div className="flex-grow p-4 overflow-y-auto">{renderContent()}</div>
       </div>
     </div>
   );

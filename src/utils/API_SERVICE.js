@@ -219,6 +219,30 @@ export const updateUserStatus = async (id, status, accessToken) => {
     throw error;
   }
 };
+
+export const updateUserType = async (id, userType, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/auth/updateUserType/${id}`;
+
+  try {
+    const response = await axiosInstance.put(endpoint, { userType });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user type:", {
+      message: error.message,
+      config: error.config,
+      response: error.response
+        ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          }
+        : null,
+    });
+
+    throw error;
+  }
+};
 export const getUserById = async (id, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
   const endpoint = `/auth/getSingleUser/${id}`;
@@ -263,6 +287,30 @@ export const updateAdminDetails = async (
     return response.data;
   } catch (error) {
     console.error("Error updating admin details:", {
+      message: error.message,
+      config: error.config,
+      response: error.response
+        ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          }
+        : null,
+    });
+
+    throw error;
+  }
+};
+
+export const updateUserPlanStatus = async (id, planStatus, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+    const endpoint = `/auth/admin/update-plan-status/${id}`;
+
+  try {
+    const response = await axiosInstance.put(endpoint, { planStatus });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user plan status:", {
       message: error.message,
       config: error.config,
       response: error.response
@@ -697,5 +745,101 @@ export const deleteUserById = async (userId, accessToken) => {
       throw new Error(error.response.data.message);
     }
     throw new Error(error.message || "Failed to delete user");
+  }
+};
+
+export const createDiscount = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/discount/create";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const getDiscounts = async (accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/discount/all";
+  try {
+    const response = await axiosInstance.get(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const deleteDiscount = async (id, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/discount/${id}`;
+  try {
+    const response = await axiosInstance.delete(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const getPrices = async (accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/price/all";
+  try {
+    const response = await axiosInstance.get(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const updatePrices = async (planType, data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/price/plan/${planType}`;
+  try {
+    const response = await axiosInstance.put(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const getAllAssignments = async (accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/price-discount-assignments/all";
+  try {
+    const response = await axiosInstance.get(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const assignDiscountToPrice = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/price-discount-assignments/assign";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const removeDiscountFromPrice = async (priceId, discountId, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/price-discount-assignments/remove/${priceId}/${discountId}`;
+  try {
+    const response = await axiosInstance.put(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
   }
 };

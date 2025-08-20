@@ -2,74 +2,56 @@ import { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import {
-  FaEye,
-  FaPlus,
-  FaTrash,
-  FaDownload,
-  FaUpload,
-  FaCheck,
-  FaEllipsisV,
-  FaEdit,
-  FaEnvelope,
-} from "react-icons/fa";
+import { FaEye, FaPlus, FaTrash, FaEdit, FaEllipsisV } from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
+import { createPortal } from "react-dom";
 import {
-  createActivationCode,
-  getActivationCodes,
-  deleteActivationCode,
-  importActivationCodes,
-  redeemActivationCode,
-  sendEMail,
-  editActivationCode,
+  createDiscount,
+  getDiscounts,
+  deleteDiscount,
 } from "../../../utils/API_SERVICE";
 
 const initialState = {
-  productName: "",
-  orderNumber: "",
-  customerName: "",
-  customerEmail: "",
-  platform: "",
-  expiresIn: "",
+  name: "",
+  usageLimit: "",
+  startDate: "",
+  endDate: "",
+  discountType: "",
+  discountValue: "",
+  applicablePlans: ["all"],
+  description: "No description",
 };
 
-const ActivationCodeManagement = () => {
+const DiscountManagement = () => {
   const { accessToken } = useContext(AuthContext);
   const [currentPage, setCurrentPage] = useState(0);
-  const [searchField, setSearchField] = useState("code");
+  const [searchField, setSearchField] = useState("couponCode");
   const [searchValue, setSearchValue] = useState("");
-  const [redeemStatusFilter, setRedeemStatusFilter] = useState("");
-  const [platformFilter, setPlatformFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [form, setForm] = useState(initialState);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [codes, setCodes] = useState([]);
+  const [discounts, setDiscounts] = useState([]);
   const [fetchError, setFetchError] = useState("");
   const [fetching, setFetching] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [selectedCode, setSelectedCode] = useState(null);
-  const [redeemedCodes, setRedeemedCodes] = useState(new Set());
+  const [selectedDiscount, setSelectedDiscount] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
+  //   const [importLoading, setImportLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 });
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-  const [emailToSend, setEmailToSend] = useState(null);
-  const [emailLoading, setEmailLoading] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [editingCode, setEditingCode] = useState(null);
+  const [editingDiscount, setEditingDiscount] = useState(null);
   const [editForm, setEditForm] = useState(initialState);
   const [editLoading, setEditLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [codeToDelete, setCodeToDelete] = useState(null);
+  const [discountToDelete, setDiscountToDelete] = useState(null);
   const itemsPerPage = 20;
 
   // Portal-based dropdown component
-  const DropdownPortal = ({ code, isOpen, onClose, position }) => {
+  const DropdownPortal = ({ discount, isOpen, onClose, position }) => {
     if (!isOpen) return null;
 
     return createPortal(
@@ -79,12 +61,12 @@ const ActivationCodeManagement = () => {
           left: position.x,
           top: position.y,
         }}
-        onClick={handleDropdownClick}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Dropdown header */}
         <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
           <p className="text-xs font-medium text-gray-600">
-            Actions for {code.code}
+            Actions for {discount.couponCode}
           </p>
         </div>
 
@@ -92,7 +74,7 @@ const ActivationCodeManagement = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleViewCode(code);
+              handleViewDiscount(discount);
               onClose();
             }}
             className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
@@ -103,52 +85,26 @@ const ActivationCodeManagement = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleEditCode(code);
+              handleEditDiscount(discount);
               onClose();
             }}
             className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors duration-150"
           >
             <FaEdit className="mr-3 h-4 w-4 text-gray-500" />
-            Edit Code
+            Edit Discount
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleSendMail(code);
+              handleDeleteDiscount(discount);
               onClose();
             }}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-150"
+            disabled={deleteLoading}
+            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150 border-t border-gray-100 disabled:opacity-50"
           >
-            <FaEnvelope className="mr-3 h-4 w-4 text-gray-500" />
-            Send Email
+            <FaTrash className="mr-3 h-4 w-4 text-red-500" />
+            Delete Discount
           </button>
-          {!code.redeemed && !redeemedCodes.has(code.code) && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRedeemCode(code);
-                onClose();
-              }}
-              className="flex items-center w-full px-4 py-2 text-sm text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-150 border-t border-gray-100"
-            >
-              <FaCheck className="mr-3 h-4 w-4 text-green-500" />
-              Redeem Code
-            </button>
-          )}
-          {!code.redeemed && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteCode(code);
-                onClose();
-              }}
-              disabled={deleteLoading}
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150 border-t border-gray-100 disabled:opacity-50"
-            >
-              <FaTrash className="mr-3 h-4 w-4 text-red-500" />
-              Delete Code
-            </button>
-          )}
         </div>
       </div>,
       document.body
@@ -157,9 +113,8 @@ const ActivationCodeManagement = () => {
 
   // Add PropTypes validation
   DropdownPortal.propTypes = {
-    code: PropTypes.shape({
-      code: PropTypes.string.isRequired,
-      redeemed: PropTypes.bool.isRequired,
+    discount: PropTypes.shape({
+      couponCode: PropTypes.string.isRequired,
     }).isRequired,
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
@@ -170,7 +125,7 @@ const ActivationCodeManagement = () => {
   };
 
   useEffect(() => {
-    if (accessToken) fetchCodes();
+    if (accessToken) fetchDiscounts();
   }, [accessToken]);
 
   // Close dropdown when clicking outside - temporarily disabled for debugging
@@ -201,14 +156,14 @@ const ActivationCodeManagement = () => {
   useEffect(() => {
     if (accessToken) {
       const timeoutId = setTimeout(() => {
-        fetchCodes();
+        fetchDiscounts();
       }, 300); // Reduced to 300ms for faster response
 
       return () => clearTimeout(timeoutId);
     }
-  }, [accessToken, searchValue, redeemStatusFilter, platformFilter]);
+  }, [accessToken, searchValue, statusFilter]);
 
-  const fetchCodes = useCallback(async () => {
+  const fetchDiscounts = useCallback(async () => {
     setFetching(true);
     setFetchError("");
 
@@ -219,29 +174,21 @@ const ActivationCodeManagement = () => {
         queryParams[searchField] = searchValue.trim();
       }
 
-      if (redeemStatusFilter) {
-        queryParams.redeemed = redeemStatusFilter;
+      if (statusFilter) {
+        queryParams.status = statusFilter;
       }
 
-      if (platformFilter) {
-        queryParams.platform = platformFilter;
-      }
-
-      const data = await getActivationCodes(accessToken, queryParams);
-      setCodes(data);
+      // Call the API to get discounts
+      const response = await getDiscounts(accessToken);
+      console.log(response.discounts);
+      setDiscounts(response.discounts || []);
     } catch (err) {
       setFetchError(err.message);
-      toast.error("Error fetching activation codes");
+      toast.error("Error fetching discounts");
     } finally {
       setFetching(false);
     }
-  }, [
-    accessToken,
-    searchValue,
-    searchField,
-    redeemStatusFilter,
-    platformFilter,
-  ]);
+  }, [accessToken, searchValue, searchField, statusFilter]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -250,14 +197,16 @@ const ActivationCodeManagement = () => {
   };
 
   const validate = () => {
-    if (!form.productName.trim()) return "Product name is required.";
-    if (!form.orderNumber.trim()) return "Order number is required.";
-    if (!form.customerName.trim()) return "Customer name is required.";
-    if (!form.customerEmail.trim()) return "Customer email is required.";
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.customerEmail))
-      return "Invalid email format.";
-    if (!form.platform.trim()) return "Platform is required.";
-    if (!form.expiresIn) return "Expiry date is required.";
+    if (!form.name.trim()) return "Discount name is required.";
+    if (!form.usageLimit || form.usageLimit <= 0)
+      return "Usage limit must be greater than 0.";
+    if (!form.startDate) return "Start date is required.";
+    if (!form.endDate) return "End date is required.";
+    if (!form.discountType) return "Discount type is required.";
+    if (!form.discountValue || form.discountValue < 0)
+      return "Discount value must be 0 or greater.";
+    if (new Date(form.startDate) >= new Date(form.endDate))
+      return "End date must be after start date.";
     return null;
   };
 
@@ -265,6 +214,7 @@ const ActivationCodeManagement = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -272,18 +222,18 @@ const ActivationCodeManagement = () => {
     }
     setLoading(true);
     try {
-      await createActivationCode(
-        { ...form, expiresIn: new Date(form.expiresIn) },
-        accessToken
-      );
-      setSuccess("Activation code created successfully.");
+      console.log(form);
+      const response = await createDiscount(form, accessToken);
+      console.log(response);
+      setSuccess("Discount created successfully.");
       setForm(initialState);
       setFormOpen(false);
-      fetchCodes();
-      toast.success("Activation code created successfully");
+      toast.success(response.message || "Discount created successfully");
+      // Refresh the discounts list
+      await fetchDiscounts();
     } catch (err) {
       setError(err.message);
-      toast.error(err.message || "Error creating activation code");
+      toast.error(err.message || "Error creating discount");
     } finally {
       setLoading(false);
     }
@@ -293,42 +243,37 @@ const ActivationCodeManagement = () => {
     setCurrentPage(data.selected);
   };
 
-  const handleSearchFieldChange = useCallback((e) => {
-    setSearchField(e.target.value);
-  }, []);
-
-  const handleSearchValueChange = useCallback((e) => {
-    setSearchValue(e.target.value);
-  }, []);
-
-  const handleCodePreview = useCallback((code) => {
-    setSelectedCode(code);
+  const handleDiscountPreview = useCallback((discount) => {
+    setSelectedDiscount(discount);
   }, []);
 
   const handleBackToTable = useCallback(() => {
-    setSelectedCode(null);
+    setSelectedDiscount(null);
   }, []);
 
-  const handleDeleteCode = useCallback((code) => {
-    setCodeToDelete(code);
+  const handleDeleteDiscount = useCallback((discount) => {
+    setDiscountToDelete(discount);
     setShowDeleteConfirmation(true);
     setOpenDropdown(null);
   }, []);
 
   const handleConfirmDelete = async () => {
-    if (!codeToDelete) return;
+    if (!discountToDelete) return;
 
     setDeleteLoading(true);
     try {
-      await deleteActivationCode(codeToDelete._id, accessToken);
-      toast.success("Activation code deleted successfully");
+      // Call the API to delete discount
+      await deleteDiscount(discountToDelete._id, accessToken);
+
+      toast.success("Discount deleted successfully");
       setShowDeleteConfirmation(false);
-      setCodeToDelete(null);
-      fetchCodes();
+      setDiscountToDelete(null);
+      // Refresh the discounts list
+      await fetchDiscounts();
     } catch (err) {
-      toast.error(err.message || "Error deleting activation code");
+      toast.error(err.message || "Error deleting discount");
       setShowDeleteConfirmation(false);
-      setCodeToDelete(null);
+      setDiscountToDelete(null);
     } finally {
       setDeleteLoading(false);
     }
@@ -336,35 +281,11 @@ const ActivationCodeManagement = () => {
 
   const handleCancelDelete = () => {
     setShowDeleteConfirmation(false);
-    setCodeToDelete(null);
+    setDiscountToDelete(null);
   };
 
-  const handleRedeemCode = useCallback(
-    async (code) => {
-      if (code.redeemed || redeemedCodes.has(code.code)) {
-        toast.info("This code has already been redeemed");
-        return;
-      }
-
-      if (
-        window.confirm("Are you sure you want to redeem this activation code?")
-      ) {
-        try {
-          await redeemActivationCode(code.code, accessToken);
-          setRedeemedCodes((prev) => new Set([...prev, code.code]));
-          toast.success("Activation code redeemed successfully");
-          setSelectedCode(null); // Go back to table view
-          fetchCodes(); // Refresh data to show updated status
-        } catch (err) {
-          toast.error(err.message || "Error redeeming activation code");
-        }
-      }
-    },
-    [accessToken, redeemedCodes, fetchCodes]
-  );
-
-  const handleDropdownToggle = (codeId, event) => {
-    if (openDropdown === codeId) {
+  const handleDropdownToggle = (discountId, event) => {
+    if (openDropdown === discountId) {
       setOpenDropdown(null);
       return;
     }
@@ -398,26 +319,24 @@ const ActivationCodeManagement = () => {
       setDropdownPosition({ x, y });
     }
 
-    setOpenDropdown(codeId);
+    setOpenDropdown(discountId);
   };
 
-  // Prevent dropdown from closing when clicking inside it
-  const handleDropdownClick = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-  };
-
-  const handleEditCode = (code) => {
-    setEditingCode(code);
+  const handleEditDiscount = (discount) => {
+    setEditingDiscount(discount);
     setEditForm({
-      productName: code.productName || "",
-      orderNumber: code.orderNumber || "",
-      customerName: code.customerName || "",
-      customerEmail: code.customerEmail || "",
-      platform: code.platform || "",
-      expiresIn: code.expiresIn
-        ? new Date(code.expiresIn).toISOString().split("T")[0]
+      couponCode: discount.couponCode || "",
+      name: discount.name || "",
+      usageLimit: discount.usageLimit || "",
+      startDate: discount.startDate
+        ? new Date(discount.startDate).toISOString().split("T")[0]
         : "",
+      endDate: discount.endDate
+        ? new Date(discount.endDate).toISOString().split("T")[0]
+        : "",
+      discountType: discount.discountType || "",
+      discountValue: discount.discountValue || "",
+      applicablePlans: discount.applicablePlans || "All",
     });
     setShowEditForm(true);
     setOpenDropdown(null);
@@ -425,26 +344,25 @@ const ActivationCodeManagement = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editingCode) return;
+    if (!editingDiscount) return;
 
     setEditLoading(true);
     try {
-      const editData = {
-        productName: editForm.productName,
-        customerName: editForm.customerName,
-        customerEmail: editForm.customerEmail,
-        platform: editForm.platform,
-        expiresIn: new Date(editForm.expiresIn),
-      };
+      // Call the API to update discount
+      const response = await createDiscount(editForm, accessToken);
 
-      await editActivationCode(editingCode._id, editData, accessToken);
-      toast.success("Activation code updated successfully!");
-      setShowEditForm(false);
-      setEditingCode(null);
-      setEditForm(initialState);
-      fetchCodes(); // Refresh the data
+      if (response.success) {
+        toast.success("Discount updated successfully!");
+        setShowEditForm(false);
+        setEditingDiscount(null);
+        setEditForm(initialState);
+        // Refresh the discounts list
+        await fetchDiscounts();
+      } else {
+        toast.error(response.message || "Failed to update discount");
+      }
     } catch (error) {
-      toast.error(error.message || "Error updating activation code");
+      toast.error(error.message || "Error updating discount");
     } finally {
       setEditLoading(false);
     }
@@ -452,188 +370,16 @@ const ActivationCodeManagement = () => {
 
   const handleEditCancel = () => {
     setShowEditForm(false);
-    setEditingCode(null);
+    setEditingDiscount(null);
     setEditForm(initialState);
   };
 
-  const handleSendMail = (code) => {
-    setEmailToSend(code);
-    setShowEmailConfirmation(true);
+  const handleViewDiscount = (discount) => {
+    handleDiscountPreview(discount);
     setOpenDropdown(null);
   };
 
-  const handleConfirmSendEmail = async () => {
-    if (!emailToSend) return;
-
-    setEmailLoading(true);
-    try {
-      const emailData = {
-        customerEmail: emailToSend.customerEmail,
-        productName: emailToSend.productName,
-        platform: emailToSend.platform,
-        expiresIn: emailToSend.expiresIn,
-      };
-
-      await sendEMail(emailData, accessToken);
-      toast.success("Email sent successfully!");
-      setShowEmailConfirmation(false);
-      setEmailToSend(null);
-      fetchCodes(); // Refresh the data after sending email
-    } catch (error) {
-      toast.error(error.message || "Error sending email");
-      setShowEmailConfirmation(false);
-      setEmailToSend(null);
-    } finally {
-      setEmailLoading(false);
-    }
-  };
-
-  const handleCancelSendEmail = () => {
-    setShowEmailConfirmation(false);
-    setEmailToSend(null);
-  };
-
-  const handleViewCode = (code) => {
-    handleCodePreview(code);
-    setOpenDropdown(null);
-  };
-
-  const handleExportData = async () => {
-    setExportLoading(true);
-    try {
-      const csvContent = [
-        "Code,Product Name,Order Number,Customer Name,Customer Email,Platform,Expiry Date,Redeemed",
-        ...codes.map((code) =>
-          [
-            code.code,
-            `"${code.productName}"`,
-            code.orderNumber,
-            `"${code.customerName}"`,
-            code.customerEmail,
-            `"${code.platform}"`,
-            code.expiresIn
-              ? new Date(code.expiresIn).toLocaleDateString()
-              : "N/A",
-            code.redeemed ? "Yes" : "No",
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `activation-codes-${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      toast.success("Data exported successfully");
-    } catch {
-      toast.error("Error exporting data");
-    } finally {
-      setExportLoading(false);
-    }
-  };
-
-  const parseCSVLine = (line, headers) => {
-    const values = line.split(",");
-
-    const rowData = {};
-    headers.forEach((header, index) => {
-      rowData[header] = values[index]?.replace(/"/g, "").trim() || "";
-    });
-
-    const expiryDateValue = (date) => {
-      const [day, month, year] = date.split("/");
-      return new Date(year, month - 1, day);
-    };
-
-    const expiresInValue =
-      rowData["expiry date"] ||
-      rowData["expiry_date"] ||
-      rowData.expirydate ||
-      rowData["expires in"] ||
-      rowData["expires_in"] ||
-      rowData.expiresin;
-    const redeemedValue = rowData.redeemed || rowData.status;
-
-    return {
-      code:
-        rowData.code ||
-        rowData["activation code"] ||
-        rowData["activation_code"],
-      productName:
-        rowData["product name"] ||
-        rowData["product_name"] ||
-        rowData.productname,
-      orderNumber:
-        rowData["order number"] ||
-        rowData["order_number"] ||
-        rowData.ordernumber,
-      customerName:
-        rowData["customer name"] ||
-        rowData["customer_name"] ||
-        rowData.customername,
-      customerEmail:
-        rowData["customer email"] ||
-        rowData["customer_email"] ||
-        rowData.customeremail,
-      platform: rowData.platform,
-      expiresIn:
-        expiresInValue !== "N/A" && expiresInValue
-          ? expiryDateValue(expiresInValue)
-          : null,
-      redeemed:
-        redeemedValue === "Yes" ||
-        redeemedValue === "yes" ||
-        redeemedValue === true,
-    };
-  };
-
-  const handleImportData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    setImportLoading(true);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const csv = e.target.result;
-        const lines = csv.split("\n");
-
-        const headers = lines[0]
-          .split(",")
-          .map((header) => header.replace(/"/g, "").trim().toLowerCase());
-
-        const importData = lines
-          .slice(1)
-          .filter((line) => line.trim())
-          .map((line) => parseCSVLine(line, headers));
-
-        const jsonData = JSON.stringify(importData, null, 2);
-        console.log("CSV converted to JSON:", jsonData);
-        console.log("CSV converted to JSON:", importData);
-
-        const result = await importActivationCodes(importData, accessToken);
-        console.log("Import API response:", result);
-
-        toast.success(result.message);
-        fetchCodes();
-      } catch (error) {
-        console.error("Error importing data:", error);
-        toast.error("Error importing data");
-      } finally {
-        setImportLoading(false);
-        event.target.value = null;
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const filteredData = useMemo(() => codes, [codes]);
+  const filteredData = useMemo(() => discounts, [discounts]);
 
   const currentPageData = useMemo(() => {
     const offset = currentPage * itemsPerPage;
@@ -649,11 +395,11 @@ const ActivationCodeManagement = () => {
     <div className="container mx-auto p-4">
       <div className="mb-10">
         <h1 className="text-4xl font-bold text-center mt-6">
-          Activation Code Management
+          Discount Management
         </h1>
       </div>
 
-      {selectedCode ? (
+      {selectedDiscount ? (
         <div className="container mx-auto p-4 bg-white rounded shadow-md">
           <button
             onClick={handleBackToTable}
@@ -663,91 +409,93 @@ const ActivationCodeManagement = () => {
           </button>
           <div className="bg-gray-100 p-6 rounded shadow-md">
             <h2 className="text-3xl font-bold mb-6 text-center">
-              Activation Code Details
+              Discount Details
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Code:</strong> {selectedCode.code}
+                  <strong>Coupon Code:</strong> {selectedDiscount.couponCode}
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Product Name:</strong> {selectedCode.productName}
+                  <strong>Name:</strong> {selectedDiscount.name}
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Order Number:</strong> {selectedCode.orderNumber}
+                  <strong>Usage Limit:</strong> {selectedDiscount.usageLimit}
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Customer Name:</strong> {selectedCode.customerName}
+                  <strong>Used:</strong> {selectedDiscount.used}
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Customer Email:</strong> {selectedCode.customerEmail}
+                  <strong>Status:</strong>{" "}
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-sm font-bold ${
+                      selectedDiscount.status === "active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {selectedDiscount.status}
+                  </span>
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Platform:</strong> {selectedCode.platform}
-                </p>
-              </div>
-              <div className="mb-4">
-                <p className="text-lg">
-                  <strong>Expiry Date:</strong>{" "}
-                  {selectedCode.expiresIn
-                    ? new Date(selectedCode.expiresIn).toLocaleDateString()
+                  <strong>Start Date:</strong>{" "}
+                  {selectedDiscount.startDate
+                    ? new Date(selectedDiscount.startDate).toLocaleDateString()
                     : "N/A"}
                 </p>
               </div>
               <div className="mb-4">
                 <p className="text-lg">
-                  <strong>Redeemed:</strong>{" "}
-                  <span
-                    className={`inline-block px-2 py-1 rounded text-sm font-bold ${
-                      selectedCode.redeemed
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {selectedCode.redeemed ? "Yes" : "No"}
-                  </span>
+                  <strong>End Date:</strong>{" "}
+                  {selectedDiscount.endDate
+                    ? new Date(selectedDiscount.endDate).toLocaleDateString()
+                    : "N/A"}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-lg">
+                  <strong>Discount Type:</strong>{" "}
+                  {selectedDiscount.discountType}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-lg">
+                  <strong>Discount Value:</strong>{" "}
+                  {selectedDiscount.discountValue}
+                  {selectedDiscount.discountType === "percentage" ? "%" : ""}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-lg">
+                  <strong>Applicable Plans:</strong>{" "}
+                  {selectedDiscount.applicablePlans || "No plans specified"}
                 </p>
               </div>
             </div>
-            {!selectedCode.redeemed &&
-              !redeemedCodes.has(selectedCode.code) && (
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={() => handleRedeemCode(selectedCode)}
-                    className="px-6 py-3 rounded-lg font-semibold text-white flex items-center gap-2 mx-auto bg-green-600 hover:bg-green-700"
-                  >
-                    <FaCheck />
-                    Redeem Code
-                  </button>
-                </div>
-              )}
           </div>
         </div>
       ) : (
-        <div className="container  mx-auto p-4 bg-white rounded shadow-md">
+        <div className="container mx-auto p-4 bg-white rounded shadow-md">
           <div className="mb-4">
             <div className="flex gap-4 items-center justify-between">
               <div className="flex gap-4 items-center flex-1">
-                <select
+                {/* <select
                   value={searchField}
                   onChange={handleSearchFieldChange}
                   className="px-4 py-2 border rounded w-48"
                 >
-                  <option value="code">Code</option>
-                  <option value="productName">Product Name</option>
-                  <option value="orderNumber">Order Number</option>
-                  <option value="customerName">Customer Name</option>
-                  <option value="customerEmail">Customer Email</option>
+                  <option value="couponCode">Coupon Code</option>
+                  <option value="name">Name</option>
                 </select>
                 <input
                   type="text"
@@ -757,54 +505,24 @@ const ActivationCodeManagement = () => {
                   className="px-4 py-2 border rounded w-64"
                 />
                 <select
-                  value={redeemStatusFilter}
-                  onChange={(e) => setRedeemStatusFilter(e.target.value)}
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-4 py-2 border rounded w-48"
                 >
                   <option value="">All Status</option>
-                  <option value="true">Redeemed</option>
-                  <option value="false">Not Redeemed</option>
-                </select>
-                <select
-                  value={platformFilter}
-                  onChange={(e) => setPlatformFilter(e.target.value)}
-                  className="px-4 py-2 border rounded w-48"
-                >
-                  <option value="">All Platforms</option>
-                  <option value="Shopify">Shopify</option>
-                  <option value="Amazon">Amazon</option>
-                </select>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
+                </select> */}
               </div>
               <div className="flex space-x-2">
-                <label
-                  className="px-4 py-2 text-white rounded flex items-center gap-2 cursor-pointer"
-                  style={{ backgroundColor: "#439AB8" }}
-                >
-                  <FaUpload />
-                  {importLoading ? "Importing..." : "Import CSV"}
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleImportData}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={handleExportData}
-                  disabled={exportLoading}
-                  className="px-4 py-2 text-white rounded flex items-center gap-2 disabled:opacity-60"
-                  style={{ backgroundColor: "#439AB8" }}
-                >
-                  <FaDownload />
-                  {exportLoading ? "Exporting..." : "Export CSV"}
-                </button>
                 <button
                   onClick={() => setFormOpen(!formOpen)}
                   className="px-4 py-2 text-white rounded flex items-center gap-2"
                   style={{ backgroundColor: "#439AB8" }}
                 >
                   <FaPlus />
-                  {formOpen ? "Hide Form" : "Add Code"}
+                  {formOpen ? "Hide Form" : "Add Discount"}
                 </button>
               </div>
             </div>
@@ -813,112 +531,129 @@ const ActivationCodeManagement = () => {
           {formOpen && (
             <div className="mb-6 bg-gray-100 p-6 rounded shadow-md">
               <h2 className="text-2xl font-bold mb-6 text-center">
-                Create Activation Code
+                Create Discount
               </h2>
               <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
                 <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="productName"
-                    className="font-medium text-gray-700"
-                  >
-                    Product Name
+                  <label htmlFor="name" className="font-medium text-gray-700">
+                    Discount Name
                   </label>
                   <input
-                    id="productName"
-                    name="productName"
+                    id="name"
+                    name="name"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Product Name"
-                    value={form.productName}
+                    placeholder="Discount Name"
+                    value={form.name}
                     onChange={handleChange}
                     autoComplete="off"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="orderNumber"
+                    htmlFor="usageLimit"
                     className="font-medium text-gray-700"
                   >
-                    Order Number
+                    Usage Limit
                   </label>
                   <input
-                    id="orderNumber"
-                    name="orderNumber"
+                    id="usageLimit"
+                    name="usageLimit"
+                    type="number"
+                    min="1"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Order Number"
-                    value={form.orderNumber}
+                    placeholder="Usage Limit"
+                    value={form.usageLimit}
                     onChange={handleChange}
-                    autoComplete="off"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="customerName"
+                    htmlFor="startDate"
                     className="font-medium text-gray-700"
                   >
-                    Customer Name
+                    Start Date
                   </label>
                   <input
-                    id="customerName"
-                    name="customerName"
+                    id="startDate"
+                    name="startDate"
+                    type="date"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Customer Name"
-                    value={form.customerName}
+                    value={form.startDate}
                     onChange={handleChange}
-                    autoComplete="off"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="customerEmail"
+                    htmlFor="endDate"
                     className="font-medium text-gray-700"
                   >
-                    Customer Email
+                    End Date
                   </label>
                   <input
-                    id="customerEmail"
-                    name="customerEmail"
+                    id="endDate"
+                    name="endDate"
+                    type="date"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Customer Email"
-                    value={form.customerEmail}
+                    value={form.endDate}
                     onChange={handleChange}
-                    autoComplete="off"
-                    type="email"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="platform"
+                    htmlFor="discountType"
                     className="font-medium text-gray-700"
                   >
-                    Platform
+                    Discount Type
                   </label>
                   <select
-                    id="platform"
-                    name="platform"
+                    id="discountType"
+                    name="discountType"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={form.platform}
+                    value={form.discountType}
                     onChange={handleChange}
                   >
-                    <option value="">Select Platform</option>
-                    <option value="Shopify">Shopify</option>
-                    <option value="Amazon">Amazon</option>
+                    <option value="">Select Type</option>
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed Amount</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label
-                    htmlFor="expiresIn"
+                    htmlFor="discountValue"
                     className="font-medium text-gray-700"
                   >
-                    Expiry Date
+                    Discount Value
                   </label>
                   <input
-                    id="expiresIn"
-                    name="expiresIn"
-                    type="date"
+                    id="discountValue"
+                    name="discountValue"
+                    type="number"
+                    min="0"
+                    step="0.01"
                     className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={form.expiresIn}
+                    placeholder="Discount Value"
+                    value={form.discountValue}
                     onChange={handleChange}
                   />
+                </div>
+                <div className="col-span-2">
+                  <label
+                    htmlFor="applicablePlans"
+                    className="font-medium text-gray-700"
+                  >
+                    Applicable Plans
+                  </label>
+                  <select
+                    id="applicablePlans"
+                    name="applicablePlans"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    value={form.applicablePlans}
+                    onChange={handleChange}
+                  >
+                    <option value="all">All</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="annual">Annual</option>
+                  </select>
                 </div>
                 <div className="col-span-2">
                   <button
@@ -927,7 +662,7 @@ const ActivationCodeManagement = () => {
                     className="w-full px-4 py-2 text-white rounded font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ backgroundColor: "#439AB8" }}
                   >
-                    {loading ? "Creating..." : "Create Code"}
+                    {loading ? "Creating..." : "Create Discount"}
                   </button>
                 </div>
                 {error && (
@@ -949,31 +684,28 @@ const ActivationCodeManagement = () => {
               <thead>
                 <tr>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Code
+                    Coupon Code
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Product Name
+                    Name
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Order Number
+                    Usage Limit
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Customer Name
+                    Used
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Customer Email
+                    Status
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Platform
+                    Start Date
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Expiry Date
+                    End Date
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Redeemed
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                    Access Code Sent
+                    Applicable Plans
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     Actions
@@ -984,7 +716,7 @@ const ActivationCodeManagement = () => {
                 {fetching ? (
                   <tr>
                     <td colSpan={9} className="text-center py-4">
-                      Loading codes...
+                      Loading discounts...
                     </td>
                   </tr>
                 ) : fetchError ? (
@@ -996,63 +728,59 @@ const ActivationCodeManagement = () => {
                 ) : currentPageData.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center py-4">
-                      No activation codes found.
+                      No discounts found.
                     </td>
                   </tr>
                 ) : (
-                  currentPageData.map((code) => (
-                    <tr key={code._id} className="relative hover:bg-gray-50">
+                  currentPageData.map((discount) => (
+                    <tr
+                      key={discount._id}
+                      className="relative hover:bg-gray-50"
+                    >
                       <td className="py-2 px-4 border-b border-gray-300 font-mono font-semibold text-blue-700">
-                        {code.code}
+                        {discount.couponCode}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300 capitalize">
+                        {discount.name}
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
-                        {code.productName}
+                        {discount.usageLimit}
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
-                        {code.orderNumber}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        {code.customerName}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        {code.customerEmail}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        {code.platform}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        {code.expiresIn
-                          ? new Date(code.expiresIn).toLocaleDateString()
-                          : "N/A"}
+                        {discount.usedCount}
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-                            code.redeemed
+                            discount.isActive === true
                               ? "bg-green-100 text-green-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
-                        >
-                          {code.redeemed ? "Yes" : "No"}
-                        </span>
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-                            code.accessCodeSentAt
-                              ? "bg-blue-100 text-blue-700"
+                              : discount.isActive === false
+                              ? "bg-red-100 text-red-700"
                               : "bg-gray-100 text-gray-700"
                           }`}
                         >
-                          {code.accessCodeSentAt ? "Yes" : "No"}
+                          {discount.isActive ? "Active" : "Inactive"}
                         </span>
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {discount.startDate
+                          ? new Date(discount.startDate).toLocaleDateString()
+                          : "N/A"}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {discount.endDate
+                          ? new Date(discount.endDate).toLocaleDateString()
+                          : "N/A"}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300 capitalize">
+                        {discount.applicablePlans || "No plans specified"}
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
                         {/* relative dropdown-container */}
                         <div className="dropdown-container">
                           <button
                             onClick={(event) =>
-                              handleDropdownToggle(code._id, event)
+                              handleDropdownToggle(discount._id, event)
                             }
                             className="px-3 py-1 rounded text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                             title="Actions"
@@ -1090,27 +818,46 @@ const ActivationCodeManagement = () => {
       )}
 
       {/* Edit Form Overlay */}
-      {showEditForm && editingCode && (
+      {showEditForm && editingDiscount && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Edit Activation Code</h3>
+            <h3 className="text-lg font-semibold mb-4">Edit Discount</h3>
             <form
               onSubmit={handleEditSubmit}
               className="grid grid-cols-2 gap-4"
             >
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editProductName"
+                  htmlFor="editCouponCode"
                   className="font-medium text-gray-700"
                 >
-                  Product Name
+                  Coupon Code
                 </label>
                 <input
-                  id="editProductName"
-                  name="productName"
+                  id="editCouponCode"
+                  name="couponCode"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Product Name"
-                  value={editForm.productName}
+                  placeholder="Coupon Code"
+                  value={editForm.couponCode}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="editName" className="font-medium text-gray-700">
+                  Discount Name
+                </label>
+                <input
+                  id="editName"
+                  name="name"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Discount Name"
+                  value={editForm.name}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
@@ -1122,83 +869,81 @@ const ActivationCodeManagement = () => {
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editOrderNumber"
+                  htmlFor="editUsageLimit"
                   className="font-medium text-gray-700"
                 >
-                  Order Number
+                  Usage Limit
                 </label>
                 <input
-                  id="editOrderNumber"
-                  name="orderNumber"
+                  id="editUsageLimit"
+                  name="usageLimit"
+                  type="number"
+                  min="1"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Order Number"
-                  value={editForm.orderNumber}
+                  placeholder="Usage Limit"
+                  value={editForm.usageLimit}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
                       [e.target.name]: e.target.value,
                     })
                   }
-                  autoComplete="off"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editCustomerName"
+                  htmlFor="editStartDate"
                   className="font-medium text-gray-700"
                 >
-                  Customer Name
+                  Start Date
                 </label>
                 <input
-                  id="editCustomerName"
-                  name="customerName"
+                  id="editStartDate"
+                  name="startDate"
+                  type="date"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Customer Name"
-                  value={editForm.customerName}
+                  value={editForm.startDate}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
                       [e.target.name]: e.target.value,
                     })
                   }
-                  autoComplete="off"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editCustomerEmail"
+                  htmlFor="editEndDate"
                   className="font-medium text-gray-700"
                 >
-                  Customer Email
+                  End Date
                 </label>
                 <input
-                  id="editCustomerEmail"
-                  name="customerEmail"
+                  id="editEndDate"
+                  name="endDate"
+                  type="date"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Customer Email"
-                  value={editForm.customerEmail}
+                  value={editForm.endDate}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
                       [e.target.name]: e.target.value,
                     })
                   }
-                  autoComplete="off"
-                  type="email"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editPlatform"
+                  htmlFor="editDiscountType"
                   className="font-medium text-gray-700"
                 >
-                  Platform
+                  Discount Type
                 </label>
                 <select
-                  id="editPlatform"
-                  name="platform"
+                  id="editDiscountType"
+                  name="discountType"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  value={editForm.platform}
+                  value={editForm.discountType}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
@@ -1206,24 +951,27 @@ const ActivationCodeManagement = () => {
                     })
                   }
                 >
-                  <option value="">Select Platform</option>
-                  <option value="Shopify">Shopify</option>
-                  <option value="Amazon">Amazon</option>
+                  <option value="">Select Type</option>
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed Amount</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
                 <label
-                  htmlFor="editExpiresIn"
+                  htmlFor="editDiscountValue"
                   className="font-medium text-gray-700"
                 >
-                  Expiry Date
+                  Discount Value
                 </label>
                 <input
-                  id="editExpiresIn"
-                  name="expiresIn"
-                  type="date"
+                  id="editDiscountValue"
+                  name="discountValue"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  value={editForm.expiresIn}
+                  placeholder="Discount Value"
+                  value={editForm.discountValue}
                   onChange={(e) =>
                     setEditForm({
                       ...editForm,
@@ -1231,6 +979,30 @@ const ActivationCodeManagement = () => {
                     })
                   }
                 />
+              </div>
+              <div className="col-span-2">
+                <label
+                  htmlFor="editApplicablePlans"
+                  className="font-medium text-gray-700"
+                >
+                  Applicable Plans
+                </label>
+                <select
+                  id="editApplicablePlans"
+                  name="applicablePlans"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={editForm.applicablePlans}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      [e.target.name]: e.target.value,
+                    })
+                  }
+                >
+                  <option value="All">All</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Annual">Annual</option>
+                </select>
               </div>
               <div className="col-span-2 flex gap-3 justify-end mt-4">
                 <button
@@ -1253,7 +1025,7 @@ const ActivationCodeManagement = () => {
                       Updating...
                     </>
                   ) : (
-                    "Update Code"
+                    "Update Discount"
                   )}
                 </button>
               </div>
@@ -1263,22 +1035,22 @@ const ActivationCodeManagement = () => {
       )}
 
       {/* Delete Confirmation Overlay */}
-      {showDeleteConfirmation && codeToDelete && (
+      {showDeleteConfirmation && discountToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4 text-red-600">
               Confirm Deletion
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete the activation code{" "}
+              Are you sure you want to delete the discount{" "}
               <span className="font-semibold font-mono">
-                {codeToDelete.code}
+                {discountToDelete.couponCode}
               </span>
               ?
             </p>
             <p className="text-sm text-gray-500 mb-6">
               This action cannot be undone and will permanently remove the
-              activation code.
+              discount.
             </p>
             <div className="flex gap-3 justify-end">
               <button
@@ -1299,45 +1071,7 @@ const ActivationCodeManagement = () => {
                     Deleting...
                   </>
                 ) : (
-                  "Delete Code"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Email Confirmation Overlay */}
-      {showEmailConfirmation && emailToSend && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Email Send</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to send an email to{" "}
-              <span className="font-semibold">{emailToSend.customerEmail}</span>
-              ?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={handleCancelSendEmail}
-                disabled={emailLoading}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmSendEmail}
-                disabled={emailLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                style={{ backgroundColor: "#439AB8" }}
-              >
-                {emailLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Sending...
-                  </>
-                ) : (
-                  "Send Email"
+                  "Delete Discount"
                 )}
               </button>
             </div>
@@ -1348,7 +1082,7 @@ const ActivationCodeManagement = () => {
       {/* Portal-based dropdown - renders outside table hierarchy */}
       {openDropdown && (
         <DropdownPortal
-          code={codes.find((code) => code._id === openDropdown)}
+          discount={discounts.find((discount) => discount._id === openDropdown)}
           isOpen={true}
           onClose={() => setOpenDropdown(null)}
           position={dropdownPosition}
@@ -1359,4 +1093,5 @@ const ActivationCodeManagement = () => {
     </div>
   );
 };
-export default ActivationCodeManagement;
+
+export default DiscountManagement;
