@@ -810,6 +810,12 @@ const DiscountManagement = () => {
                     Used
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                    Discount Type
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                    Discount Value
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                     Status
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
@@ -862,6 +868,12 @@ const DiscountManagement = () => {
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
                         {discount.usedCount}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {discount.discountType}
+                      </td>
+                      <td className="py-2 px-4 border-b border-gray-300">
+                        {discount.discountValue}
                       </td>
                       <td className="py-2 px-4 border-b border-gray-300">
                         <span
