@@ -80,9 +80,9 @@ console.log(profile);
             <div className="container mx-auto p-4 bg-white rounded shadow-md max-w-xl">
                 <form onSubmit={handleUpdate} className="space-y-4">
                     <div className="flex items-center justify-center">
-                        <div className="relative">
+                        {/* <div className="relative">
                             <img
-                                //src={profile.profileImage}
+                                src={profile.profileImage}
                                 alt="Profile"
                                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
                             />
@@ -98,7 +98,7 @@ console.log(profile);
                                 className="hidden"
                                 onChange={handleProfileImageChange}
                             />
-                        </div>
+                        </div> */}
                     </div>
                     <div className="flex gap-4">
                         <input

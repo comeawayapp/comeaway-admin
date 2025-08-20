@@ -3,13 +3,24 @@ import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PropTypes from "prop-types";
-import { FaEye, FaPlus, FaTrash, FaEdit, FaEllipsisV } from "react-icons/fa";
+import {
+  FaPlus,
+  FaTrash,
+  FaEdit,
+  FaEllipsisV,
+  FaToggleOff,
+} from "react-icons/fa";
 import { AuthContext } from "../../../context/authContext";
 import { createPortal } from "react-dom";
 import {
   createDiscount,
   getDiscounts,
   deleteDiscount,
+  getAllAssignments,
+  getPrices,
+  assignDiscountToPrice,
+  removeDiscountFromPrice,
+  updateDiscount,
 } from "../../../utils/API_SERVICE";
 
 const initialState = {
@@ -33,11 +44,13 @@ const DiscountManagement = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [prices, setPrices] = useState([]);
   const [discounts, setDiscounts] = useState([]);
   const [fetchError, setFetchError] = useState("");
   const [fetching, setFetching] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
+  const [assignDiscount, setAssignDiscount] = useState([]);
   const [deleteLoading, setDeleteLoading] = useState(false);
   //   const [importLoading, setImportLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -48,6 +61,12 @@ const DiscountManagement = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [discountToDelete, setDiscountToDelete] = useState(null);
+  const [discountToAdd, setDiscountToAdd] = useState(null);
+  const [discountToRemove, setDiscountToRemove] = useState(null);
+  const [showAddToPrice, setShowAddToPrice] = useState(false);
+  const [showRemoveFromPrice, setShowRemoveFromPrice] = useState(false);
+  const [selectedPrice, setSelectedPrice] = useState("");
+  const [priceOperationLoading, setPriceOperationLoading] = useState(false);
   const itemsPerPage = 20;
 
   // Portal-based dropdown component
@@ -56,7 +75,7 @@ const DiscountManagement = () => {
 
     return createPortal(
       <div
-        className="fixed w-48 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden portal-dropdown"
+        className="fixed w-64 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden portal-dropdown"
         style={{
           left: position.x,
           top: position.y,
@@ -71,17 +90,34 @@ const DiscountManagement = () => {
         </div>
 
         <div className="py-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewDiscount(discount);
-              onClose();
-            }}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-          >
-            <FaEye className="mr-3 h-4 w-4 text-gray-500" />
-            View Details
-          </button>
+          {assignDiscount.some(
+            (assignment) => assignment?.discountId?._id === discount?._id
+          ) ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveFromPrice(discount);
+                onClose();
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 text-[12px] hover:text-blue-700 transition-colors duration-150"
+            >
+              <FaToggleOff className="mr-3 h-4 w-4 text-gray-500" />
+              Remove from Price
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToPrice(discount);
+                onClose();
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+            >
+              <FaPlus className="mr-3 h-4 w-4 text-gray-500" />
+              Add to Price
+            </button>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -114,6 +150,7 @@ const DiscountManagement = () => {
   // Add PropTypes validation
   DropdownPortal.propTypes = {
     discount: PropTypes.shape({
+      _id: PropTypes.string.isRequired,
       couponCode: PropTypes.string.isRequired,
     }).isRequired,
     isOpen: PropTypes.bool.isRequired,
@@ -124,8 +161,27 @@ const DiscountManagement = () => {
     }).isRequired,
   };
 
+  const fetchPrices = async () => {
+    setFetching(true);
+    setError("");
+    try {
+      const response = await getPrices(accessToken);
+      console.log(response);
+      setPrices(response.prices || []);
+    } catch (err) {
+      setError(err.message);
+      toast.error("Error fetching prices");
+    } finally {
+      setFetching(false);
+    }
+  };
+
   useEffect(() => {
-    if (accessToken) fetchDiscounts();
+    if (accessToken) {
+      fetchAssignments();
+      fetchDiscounts();
+      fetchPrices();
+    }
   }, [accessToken]);
 
   // Close dropdown when clicking outside - temporarily disabled for debugging
@@ -151,6 +207,12 @@ const DiscountManagement = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [openDropdown]);
+
+  const fetchAssignments = useCallback(async () => {
+    const response = await getAllAssignments(accessToken);
+    console.log("assignments", response.assignments);
+    setAssignDiscount(response.assignments || []);
+  }, [accessToken]);
 
   // Optimized debounced search effect with faster response
   useEffect(() => {
@@ -243,8 +305,16 @@ const DiscountManagement = () => {
     setCurrentPage(data.selected);
   };
 
-  const handleDiscountPreview = useCallback((discount) => {
-    setSelectedDiscount(discount);
+  const handleAddToPrice = useCallback((discount) => {
+    console.log("discount", discount);
+    setDiscountToAdd(discount);
+    setShowAddToPrice(true);
+  }, []);
+
+  const handleRemoveFromPrice = useCallback((discount) => {
+    console.log("discount", discount);
+    setDiscountToRemove(discount);
+    setShowRemoveFromPrice(true);
   }, []);
 
   const handleBackToTable = useCallback(() => {
@@ -322,6 +392,55 @@ const DiscountManagement = () => {
     setOpenDropdown(discountId);
   };
 
+  const handleAddToPriceSubmit = async (price) => {
+    if (!price || price === "") {
+      toast.error("Please select a price plan");
+      return;
+    }
+
+    setPriceOperationLoading(true);
+    try {
+      const response = await assignDiscountToPrice(
+        {
+          priceId: price,
+          discountId: discountToAdd._id,
+        },
+        accessToken
+      );
+
+      toast.success(response.message);
+      setShowAddToPrice(false);
+      setDiscountToAdd(null);
+      setSelectedPrice("");
+      await fetchAssignments(); // Refresh assignments
+      await fetchDiscounts(); // Refresh discounts
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setPriceOperationLoading(false);
+    }
+  };
+
+  const handleRemoveFromPriceSubmit = async (priceId) => {
+    setPriceOperationLoading(true);
+    try {
+      const response = await removeDiscountFromPrice(
+        priceId,
+        discountToRemove._id,
+        accessToken
+      );
+      toast.success(response.message);
+      setShowRemoveFromPrice(false);
+      setDiscountToRemove(null);
+      await fetchAssignments(); // Refresh assignments
+      await fetchDiscounts(); // Refresh discounts
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setPriceOperationLoading(false);
+    }
+  };
+
   const handleEditDiscount = (discount) => {
     setEditingDiscount(discount);
     setEditForm({
@@ -349,18 +468,13 @@ const DiscountManagement = () => {
     setEditLoading(true);
     try {
       // Call the API to update discount
-      const response = await createDiscount(editForm, accessToken);
-
-      if (response.success) {
-        toast.success("Discount updated successfully!");
-        setShowEditForm(false);
-        setEditingDiscount(null);
-        setEditForm(initialState);
-        // Refresh the discounts list
-        await fetchDiscounts();
-      } else {
-        toast.error(response.message || "Failed to update discount");
-      }
+      await updateDiscount(editingDiscount._id, editForm, accessToken);
+      toast.success("Discount updated successfully!");
+      setShowEditForm(false);
+      setEditingDiscount(null);
+      setEditForm(initialState);
+      // Refresh the discounts list
+      await fetchDiscounts();
     } catch (error) {
       toast.error(error.message || "Error updating discount");
     } finally {
@@ -374,10 +488,10 @@ const DiscountManagement = () => {
     setEditForm(initialState);
   };
 
-  const handleViewDiscount = (discount) => {
-    handleDiscountPreview(discount);
-    setOpenDropdown(null);
-  };
+  //   const handleViewDiscount = (discount) => {
+  //     handleDiscountPreview(discount);
+  //     setOpenDropdown(null);
+  //   };
 
   const filteredData = useMemo(() => discounts, [discounts]);
 
@@ -999,9 +1113,9 @@ const DiscountManagement = () => {
                     })
                   }
                 >
-                  <option value="All">All</option>
-                  <option value="Monthly">Monthly</option>
-                  <option value="Annual">Annual</option>
+                  <option value="all">All</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="annual">Annual</option>
                 </select>
               </div>
               <div className="col-span-2 flex gap-3 justify-end mt-4">
@@ -1074,6 +1188,170 @@ const DiscountManagement = () => {
                   "Delete Discount"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRemoveFromPrice && discountToRemove && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">
+              Remove Discount from Price
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove discount{" "}
+              <span className="font-semibold font-mono text-blue-600">
+                {discountToRemove.couponCode}
+              </span>{" "}
+              from price plan{" "}
+              <span className="font-semibold capitalize">
+                {assignDiscount.find(
+                  (assignment) =>
+                    assignment?.discountId?._id === discountToRemove?._id
+                )?.priceId?.planType || "Unknown"}
+              </span>
+              ?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowRemoveFromPrice(false);
+                  setDiscountToRemove(null);
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={priceOperationLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                onClick={() => {
+                  const assignment = assignDiscount.find(
+                    (assignment) =>
+                      assignment?.discountId?._id === discountToRemove?._id
+                  );
+                  if (assignment?.priceId?._id) {
+                    handleRemoveFromPriceSubmit(assignment.priceId._id);
+                  } else {
+                    toast.error("Price assignment not found");
+                  }
+                }}
+              >
+                {priceOperationLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Removing...
+                  </>
+                ) : (
+                  "Remove Discount"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddToPrice && discountToAdd && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Add Discount to Price
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAddToPrice(false);
+                  setDiscountToAdd(null);
+                  setSelectedPrice("");
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-gray-600 mb-4">
+                Adding discount{" "}
+                <span className="font-semibold font-mono text-blue-600">
+                  {discountToAdd.couponCode}
+                </span>{" "}
+                to a price plan
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="addToPrice"
+                  className="font-medium text-gray-700"
+                >
+                  Select Price Plan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="addToPrice"
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={selectedPrice}
+                  onChange={(e) => setSelectedPrice(e.target.value)}
+                >
+                  <option value="">Select a price plan</option>
+                  {prices.map((price) => (
+                    <option key={price._id} value={price._id}>
+                      {price.planType.charAt(0).toUpperCase() +
+                        price.planType.slice(1)}{" "}
+                      Plan
+                    </option>
+                  ))}
+                </select>
+                {prices.filter(
+                  (price) =>
+                    !assignDiscount.some(
+                      (assignment) => assignment.priceId._id === price._id
+                    )
+                ).length === 0 && <p></p>}
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddToPrice(false);
+                    setDiscountToAdd(null);
+                    setSelectedPrice("");
+                  }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedPrice || priceOperationLoading}
+                  className="px-4 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                  style={{ backgroundColor: "#439AB8" }}
+                  onClick={() => handleAddToPriceSubmit(selectedPrice)}
+                >
+                  {priceOperationLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Adding...
+                    </>
+                  ) : (
+                    "Add to Price"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

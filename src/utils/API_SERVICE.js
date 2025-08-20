@@ -783,6 +783,18 @@ export const deleteDiscount = async (id, accessToken) => {
     throw new Error(errorMsg);
   }
 };
+export const updateDiscount = async (id,data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/discount/${id}`;
+  try {
+    const response = await axiosInstance.put(endpoint,data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
 
 export const getPrices = async (accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
