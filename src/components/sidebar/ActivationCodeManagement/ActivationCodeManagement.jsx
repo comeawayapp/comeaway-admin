@@ -455,6 +455,7 @@ const ActivationCodeManagement = () => {
         productName: editForm.productName,
         customerName: editForm.customerName,
         customerEmail: editForm.customerEmail,
+        orderNumber: editForm.orderNumber,
         platform: editForm.platform,
         expiresIn: new Date(editForm.expiresIn),
       };
