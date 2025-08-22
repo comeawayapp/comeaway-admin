@@ -81,9 +81,9 @@ export default function AddOrUpdateSound({
         return;
       }
 
-      if (!validateFileSize(file, 20)) {
+      if (!validateFileSize(file, 100)) {
         toast.error(
-          `Sound file is too large. Maximum size is 10 MB. Current size: ${formatFileSize(
+          `Sound file is too large. Maximum size is 100 MB. Current size: ${formatFileSize(
             file.size
           )}`
         );
@@ -256,10 +256,7 @@ export default function AddOrUpdateSound({
         </div>
       </div>
       <div className="p-6">
-        <form
-          className="space-y-6"
-          onSubmit={handleSubmit}
-        >
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label
               htmlFor="title"
@@ -354,11 +351,7 @@ export default function AddOrUpdateSound({
               )}
               {soundPreview && (
                 <div className="mt-2">
-                  <audio
-                    controls
-                    src={soundPreview}
-                    className="w-full"
-                  >
+                  <audio controls src={soundPreview} className="w-full">
                     Your browser does not support the audio element.
                   </audio>
                 </div>
@@ -442,10 +435,7 @@ export default function AddOrUpdateSound({
             </label>
             <div className="border border-gray-300 rounded-md p-4 space-y-2">
               {categories.map((category) => (
-                <div
-                  key={category._id}
-                  className="flex items-center space-x-2"
-                >
+                <div key={category._id} className="flex items-center space-x-2">
                   <div className="relative flex items-start">
                     <div className="flex h-5 items-center">
                       <input
