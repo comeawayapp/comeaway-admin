@@ -839,7 +839,8 @@ export const assignDiscountToPrice = async (data, accessToken) => {
     const response = await axiosInstance.post(endpoint, data);
     return response.data;
   } catch (error) {
-    const errorMsg = error.response?.data?.error || error.message;
+    console.log(error);
+    const errorMsg = error.response?.data?.message || error.message;
     throw new Error(errorMsg);
   }
 };

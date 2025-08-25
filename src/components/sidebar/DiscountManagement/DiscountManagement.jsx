@@ -437,6 +437,7 @@ const DiscountManagement = () => {
       await fetchAssignments(); // Refresh assignments
       await fetchDiscounts(); // Refresh discounts
     } catch (error) {
+      // console.log(error);
       toast.error(error.message);
     } finally {
       setPriceOperationLoading(false);
