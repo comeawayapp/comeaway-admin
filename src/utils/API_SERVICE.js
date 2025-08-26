@@ -304,7 +304,7 @@ export const updateAdminDetails = async (
 
 export const updateUserPlanStatus = async (id, planStatus, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-    const endpoint = `/auth/admin/update-plan-status/${id}`;
+  const endpoint = `/auth/admin/update-plan-status/${id}`;
 
   try {
     const response = await axiosInstance.put(endpoint, { planStatus });
@@ -750,7 +750,7 @@ export const deleteUserById = async (userId, accessToken) => {
 
 export const createDiscount = async (data, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = "/discount/create";
+  const endpoint = "/discounts/create";
   try {
     const response = await axiosInstance.post(endpoint, data);
     return response.data;
@@ -762,7 +762,7 @@ export const createDiscount = async (data, accessToken) => {
 
 export const getDiscounts = async (accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = "/discount/all";
+  const endpoint = "/discounts/all";
   try {
     const response = await axiosInstance.get(endpoint);
     return response.data;
@@ -774,7 +774,7 @@ export const getDiscounts = async (accessToken) => {
 
 export const deleteDiscount = async (id, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = `/discount/${id}`;
+  const endpoint = `/discounts/${id}`;
   try {
     const response = await axiosInstance.delete(endpoint);
     return response.data;
@@ -783,11 +783,11 @@ export const deleteDiscount = async (id, accessToken) => {
     throw new Error(errorMsg);
   }
 };
-export const updateDiscount = async (id,data, accessToken) => {
+export const updateDiscount = async (id, data, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = `/discount/${id}`;
+  const endpoint = `/discounts/${id}`;
   try {
-    const response = await axiosInstance.put(endpoint,data);
+    const response = await axiosInstance.put(endpoint, data);
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;
@@ -795,12 +795,12 @@ export const updateDiscount = async (id,data, accessToken) => {
   }
 };
 
-
 export const getPrices = async (accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = "/price/all";
+  const endpoint = "/prices/all";
   try {
     const response = await axiosInstance.get(endpoint);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;
@@ -810,7 +810,7 @@ export const getPrices = async (accessToken) => {
 
 export const updatePrices = async (planType, data, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = `/price/plan/${planType}`;
+  const endpoint = `/prices/plan/${planType}`;
   try {
     const response = await axiosInstance.put(endpoint, data);
     return response.data;
@@ -822,7 +822,7 @@ export const updatePrices = async (planType, data, accessToken) => {
 
 export const getAllAssignments = async (accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = "/price-discount-assignments/all";
+  const endpoint = "/prices/plan/monthly/with-available-discounts";
   try {
     const response = await axiosInstance.get(endpoint);
     return response.data;
@@ -834,7 +834,7 @@ export const getAllAssignments = async (accessToken) => {
 
 export const assignDiscountToPrice = async (data, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = "/price-discount-assignments/assign";
+  const endpoint = "/prices/assign-discount";
   try {
     const response = await axiosInstance.post(endpoint, data);
     return response.data;
@@ -845,11 +845,15 @@ export const assignDiscountToPrice = async (data, accessToken) => {
   }
 };
 
-export const removeDiscountFromPrice = async (priceId, discountId, accessToken) => {
+export const removeDiscountFromPrice = async (
+  priceId,
+  discountId,
+  accessToken
+) => {
   const axiosInstance = createAxiosInstance(accessToken);
-  const endpoint = `/price-discount-assignments/remove/${priceId}/${discountId}`;
+  const endpoint = `/prices/remove-discount/${priceId}`;
   try {
-    const response = await axiosInstance.put(endpoint);
+    const response = await axiosInstance.delete(endpoint);
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;

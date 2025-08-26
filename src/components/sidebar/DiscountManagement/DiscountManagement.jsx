@@ -113,7 +113,7 @@ const DiscountManagement = () => {
 
         <div className="py-1">
           {assignDiscount.some(
-            (assignment) => assignment?.discountId?._id === discount?._id
+            (assignment) => assignment?.availableDiscounts[0]?.couponCode === discount?.couponCode
           ) ? (
             <button
               onClick={(e) => {
@@ -232,8 +232,8 @@ const DiscountManagement = () => {
 
   const fetchAssignments = useCallback(async () => {
     const response = await getAllAssignments(accessToken);
-    console.log("assignments", response.assignments);
-    setAssignDiscount(response.assignments || []);
+    console.log("assignments", response.prices);
+    setAssignDiscount(response.prices || []);
   }, [accessToken]);
 
   // Optimized debounced search effect with faster response
@@ -436,6 +436,7 @@ const DiscountManagement = () => {
       setSelectedPrice("");
       await fetchAssignments(); // Refresh assignments
       await fetchDiscounts(); // Refresh discounts
+      await fetchPrices(); // Refresh prices
     } catch (error) {
       // console.log(error);
       toast.error(error.message);
@@ -457,6 +458,7 @@ const DiscountManagement = () => {
       setDiscountToRemove(null);
       await fetchAssignments(); // Refresh assignments
       await fetchDiscounts(); // Refresh discounts
+      await fetchPrices(); // Refresh prices
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -1263,12 +1265,15 @@ const DiscountManagement = () => {
                 disabled={priceOperationLoading}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
                 onClick={() => {
-                  const assignment = assignDiscount.find(
+                  const assignment = prices.find(
                     (assignment) =>
-                      assignment?.discountId?._id === discountToRemove?._id
+                      assignment?.discountId === discountToRemove?._id
                   );
-                  if (assignment?.priceId?._id) {
-                    handleRemoveFromPriceSubmit(assignment.priceId._id);
+                  // console.log("assignment", assignment);
+                  // console.log("discountToRemove", discountToRemove);
+                  // console.log("prices", prices);
+                  if (assignment?._id) {
+                    handleRemoveFromPriceSubmit(assignment._id);
                   } else {
                     toast.error("Price assignment not found");
                   }
@@ -1355,7 +1360,7 @@ const DiscountManagement = () => {
                 {prices.filter(
                   (price) =>
                     !assignDiscount.some(
-                      (assignment) => assignment.priceId._id === price._id
+                      (assignment) => assignment.planType === price.planType
                     )
                 ).length === 0 && <p></p>}
               </div>
