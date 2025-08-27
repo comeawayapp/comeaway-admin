@@ -51,14 +51,12 @@ export default function AddOrUpdateSound({
     if (selectedSound) {
       // Set existing thumbnail preview if available
       if (selectedSound.thumbnail) {
-        setThumbnailPreview(
-          "https://api.comeaway.com/" + selectedSound.thumbnail
-        );
+        setThumbnailPreview(selectedSound.thumbnail);
       }
 
       // Set existing sound preview if available
       if (selectedSound.soundFile) {
-        setSoundPreview("https://api.comeaway.com/" + selectedSound.soundFile);
+        setSoundPreview(selectedSound.soundFile);
       }
     }
   }, [selectedSound]);
