@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect, useContext } from "react";
-import { Search, Plus, Edit, Trash2, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Upload,
+} from "lucide-react";
 import AddOrUpdateSound from "./component/AddUpdateForm";
 import {
   deleteSound,
@@ -36,9 +45,10 @@ export default function SoundManagement() {
     async function fetchSounds() {
       try {
         const soundsData = await getSounds(accessToken);
-        setSounds(soundsData);
-        setFilteredSounds(soundsData);
-        console.log(soundsData);
+        const reversedSounds = soundsData.reverse();
+        setSounds(reversedSounds);
+        setFilteredSounds(reversedSounds);
+        console.log(reversedSounds);
       } catch (error) {
         toast.error("Error fetching sounds");
       }
@@ -121,8 +131,9 @@ export default function SoundManagement() {
       if (!newSound) {
         console.log("No sound data provided, refetching sounds list...");
         const soundsData = await getSounds(accessToken);
-        setSounds(soundsData);
-        setFilteredSounds(soundsData);
+        const reversedSounds = soundsData.reverse();
+        setSounds(reversedSounds);
+        setFilteredSounds(reversedSounds);
       } else {
         // Handle the case where sound data is passed (legacy behavior)
         if (selectedSound) {
@@ -158,6 +169,58 @@ export default function SoundManagement() {
       return category ? category.name : "Unknown";
     });
     return names.join(", ");
+  };
+
+  const getUploadStatusBadge = (uploadStatus) => {
+    if (!uploadStatus) {
+      return {
+        icon: AlertCircle,
+        text: "Unknown",
+        className: "bg-gray-100 text-gray-800",
+      };
+    }
+
+    const status = uploadStatus.toLowerCase();
+
+    if (
+      status.includes("completed") ||
+      status.includes("success") ||
+      status.includes("uploaded")
+    ) {
+      return {
+        icon: CheckCircle,
+        text: "Completed",
+        className: "bg-green-100 text-green-800",
+      };
+    } else if (
+      status.includes("pending") ||
+      status.includes("processing") ||
+      status.includes("uploading")
+    ) {
+      return {
+        icon: Clock,
+        text: "Processing",
+        className: "bg-yellow-100 text-yellow-800",
+      };
+    } else if (status.includes("failed") || status.includes("error")) {
+      return {
+        icon: AlertCircle,
+        text: "Failed",
+        className: "bg-red-100 text-red-800",
+      };
+    } else if (status.includes("upload")) {
+      return {
+        icon: Upload,
+        text: "Uploading",
+        className: "bg-blue-100 text-blue-800",
+      };
+    } else {
+      return {
+        icon: Clock,
+        text: uploadStatus,
+        className: "bg-gray-100 text-gray-800",
+      };
+    }
   };
 
   const renderMainView = () => {
@@ -278,6 +341,12 @@ export default function SoundManagement() {
                     </th>
                     <th
                       scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Upload Status
+                    </th>
+                    <th
+                      scope="col"
                       className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Actions
@@ -316,6 +385,22 @@ export default function SoundManagement() {
                           >
                             {sound.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {(() => {
+                            const statusBadge = getUploadStatusBadge(
+                              sound.uploadStatus
+                            );
+                            const IconComponent = statusBadge.icon;
+                            return (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}
+                              >
+                                <IconComponent className="h-3 w-3 mr-1" />
+                                {statusBadge.text}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end gap-2">
@@ -399,10 +484,7 @@ export default function SoundManagement() {
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto">
         <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div
-            className="fixed inset-0 transition-opacity"
-            aria-hidden="true"
-          >
+          <div className="fixed inset-0 transition-opacity" aria-hidden="true">
             <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
           </div>
 
@@ -417,10 +499,7 @@ export default function SoundManagement() {
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="sm:flex sm:items-start">
                 <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                  <Trash2
-                    className="h-6 w-6 text-red-600"
-                    aria-hidden="true"
-                  />
+                  <Trash2 className="h-6 w-6 text-red-600" aria-hidden="true" />
                 </div>
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                   <h3 className="text-lg leading-6 font-medium text-gray-900">

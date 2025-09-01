@@ -324,7 +324,7 @@ export default function AddOrUpdateSound({
                       drag and drop
                     </p>
                     <p className="text-xs text-gray-500">
-                      MP3, WAV, OGG, M4A (Max 20MB)
+                      MP3, WAV, OGG, M4A (Max 100MB)
                     </p>
                   </div>
                   <input

@@ -20,6 +20,7 @@ const createAxiosInstance = (accessToken) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
+    // timeout:1000000, // 10 minutes for large file uploads 
     withCredentials: false, // Important for CORS
   });
 
@@ -61,6 +62,7 @@ const createAxiosInstances = (accessToken) => {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
+    // timeout:1000000,
     withCredentials: false, // Important for CORS
   });
 
