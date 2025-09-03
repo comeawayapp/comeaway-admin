@@ -507,9 +507,9 @@ export default function SoundManagement() {
                   </h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Are you sure you want to delete "{itemToDelete?.title}"?
+                      Are you sure you want to delete &quot;{itemToDelete?.title}"?
                       This action cannot be undone.
-                    </p>
+                    </p>  
                   </div>
                 </div>
               </div>

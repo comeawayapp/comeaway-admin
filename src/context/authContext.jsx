@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // import jwtDecode from 'jwt-decode';
 import { jwtDecode } from 'jwt-decode';
 import React, { createContext, useState, useEffect } from 'react';

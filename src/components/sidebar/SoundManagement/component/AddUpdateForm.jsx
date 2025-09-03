@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 "use client";
 
 import { useState, useEffect, useContext } from "react";
@@ -5,9 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
-  createSound,
-  updateSound,
   getCategories,
+  createAxiosInstance,
 } from "../../../../utils/API_SERVICE";
 import { AuthContext } from "../../../../context/authContext";
 import {
@@ -16,6 +16,27 @@ import {
   validateFileSize,
   validateFileType,
 } from "../../../../utils/fileUtils";
+import directUploadService from "../../../../utils/directUploadService";
+
+// Function to get sound duration from audio file
+const getSoundDuration = (file) => {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+    
+    audio.addEventListener('loadedmetadata', () => {
+      URL.revokeObjectURL(url);
+      resolve(Math.round(audio.duration));
+    });
+    
+    audio.addEventListener('error', (e) => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load audio file'));
+    });
+    
+    audio.src = url;
+  });
+};
 
 export default function AddOrUpdateSound({
   setCurrentView,
@@ -25,14 +46,15 @@ export default function AddOrUpdateSound({
 }) {
   const { accessToken } = useContext(AuthContext);
   const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [soundFile, setSoundFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [soundPreview, setSoundPreview] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const MAX_SOUND_FILE_SIZE = 10 * 1024 * 1024; // 10 MB for sound files
-  const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5 MB for thumbnails
+
+  const MAX_SOUND_FILE_SIZE = 100 * 1024 * 1024; // 10 MB for sound files
+  const MAX_THUMBNAIL_SIZE = 2 * 1024 * 1024; // 2 MB for thumbnails
 
   useEffect(() => {
     async function fetchCategories() {
@@ -40,6 +62,7 @@ export default function AddOrUpdateSound({
         const categoriesData = await getCategories(accessToken);
         setCategories(categoriesData);
       } catch (error) {
+        console.error("Error fetching categories", error);
         toast.error("Error fetching categories");
       }
     }
@@ -58,10 +81,14 @@ export default function AddOrUpdateSound({
       if (selectedSound.soundFile) {
         setSoundPreview(selectedSound.soundFile);
       }
+
+      // Set existing selected categories
+      if (selectedSound.categories) {
+        setSelectedCategories(selectedSound.categories);
+      }
     }
   }, [selectedSound]);
 
-  console.log("selectedSound", selectedSound);
 
   const handleSoundUpload = (event) => {
     const file = event.target.files[0];
@@ -79,9 +106,9 @@ export default function AddOrUpdateSound({
         return;
       }
 
-      if (!validateFileSize(file, 100)) {
+      if (!validateFileSize(file, MAX_SOUND_FILE_SIZE)) {
         toast.error(
-          `Sound file is too large. Maximum size is 100 MB. Current size: ${formatFileSize(
+          `Sound file is too large. Maximum size is ${MAX_SOUND_FILE_SIZE / 1024 / 1024} MB. Current size: ${formatFileSize(
             file.size
           )}`
         );
@@ -93,6 +120,15 @@ export default function AddOrUpdateSound({
         setSoundPreview(e.target.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle category selection
+  const handleCategoryChange = (categoryId, isChecked) => {
+    if (isChecked) {
+      setSelectedCategories(prev => [...prev, categoryId]);
+    } else {
+      setSelectedCategories(prev => prev.filter(id => id !== categoryId));
     }
   };
 
@@ -114,11 +150,11 @@ export default function AddOrUpdateSound({
       let processedFile = file;
 
       // If file is too large, try to compress it
-      if (!validateFileSize(file, 5)) {
+      if (!validateFileSize(file, MAX_THUMBNAIL_SIZE)) {
         toast.info("Compressing large image...");
         try {
           processedFile = await compressImage(file, 20 * 1024, 0.8); // 20MB max, 80% quality
-          if (!validateFileSize(processedFile, 5)) {
+          if (!validateFileSize(processedFile, MAX_THUMBNAIL_SIZE)) {
             toast.error(
               `Image is still too large after compression. Please use a smaller image.`
             );
@@ -147,6 +183,8 @@ export default function AddOrUpdateSound({
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    console.log('Selected categories:', selectedCategories);
+
     // Validate files are selected
     if (!selectedSound && !soundFile) {
       toast.error("Please select a sound file");
@@ -159,46 +197,88 @@ export default function AddOrUpdateSound({
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
-
-    const formData = new FormData();
-    formData.append("title", event.target.title.value);
-    formData.append("description", event.target.description.value);
-    formData.append("status", event.target.status.value);
-
-    if (soundFile) {
-      formData.append("soundFile", soundFile);
-    }
-    if (thumbnailFile) {
-      formData.append("thumbnail", thumbnailFile);
-    }
-
-    // Get selected categories
-    const selectedCategories = Array.from(event.target.category)
-      .filter((input) => input.checked)
-      .map((input) => input.value);
-    formData.append("categories", JSON.stringify(selectedCategories));
-
-    // Log formData contents and total size
-    let totalSize = 0;
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        totalSize += value.size;
-        console.log(`${key}: ${value.name} (${formatFileSize(value.size)})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-    console.log(`Total upload size: ${formatFileSize(totalSize)}`);
 
     try {
+      let soundFileUrl = null;
+      let thumbnailUrl = null;
+
+      // Upload files directly to DigitalOcean Spaces (FAST!)
+      let soundDuration = null;
+      if (soundFile) {
+        // Get sound duration before upload
+        soundDuration = await getSoundDuration(soundFile);
+        console.log('Sound duration:', soundDuration, 'seconds');
+
+        const soundObjectKey = directUploadService.generateObjectKey(soundFile, 'sounds/');
+        console.log('Sound object key:', soundObjectKey);
+        soundFileUrl = await directUploadService.uploadFileWithProgress(
+          soundFile, 
+          soundObjectKey, 
+          soundFile.type, 
+          (loaded, total, percent) => {
+            console.log(`Sound upload progress: ${(percent || 0).toFixed(1)}%`);
+          }
+        );
+        console.log('Sound file uploaded directly to Spaces:', soundFileUrl);
+      } else if (selectedSound?.soundFile) {
+        soundFileUrl = selectedSound.soundFile;
+        soundDuration = selectedSound.duration || null;
+      }
+
+      if (thumbnailFile) {
+        const thumbnailObjectKey = directUploadService.generateObjectKey(thumbnailFile, 'thumbnails/');
+        thumbnailUrl = await directUploadService.uploadFileWithProgress(
+          thumbnailFile, 
+          thumbnailObjectKey, 
+          thumbnailFile.type, 
+          (loaded, total, percent) => {
+            console.log(`Thumbnail upload progress: ${(percent || 0).toFixed(1)}%`);
+          }
+        );
+        console.log('Thumbnail uploaded directly to Spaces:', thumbnailUrl);
+      } else if (selectedSound?.thumbnail) {
+        thumbnailUrl = selectedSound.thumbnail;
+      }
+
+     
+      // Prepare sound data with URLs (no files!)
+      const soundData = {
+        title: event.target.title.value,
+        description: event.target.description.value,
+        status: event.target.status.value,
+        soundFile: soundFileUrl,
+        thumbnail: thumbnailUrl,
+        duration: soundDuration,
+        categories: selectedCategories,
+        addedDate: new Date().toISOString()
+      };
+
+      console.log('Sound data to send (URLs only):', soundData);
+
+      // Send only URLs to backend (FAST!)
       let result;
       if (selectedSound) {
-        result = await updateSound(selectedSound._id, formData, accessToken);
+        // Send JSON data with URLs to backend for update
+        const axiosInstance = createAxiosInstance(accessToken);
+        const response = await axiosInstance.put(`/sounds/updateSound/${selectedSound._id}`, soundData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 30000, // 30 seconds for JSON requests
+        });
+        result = response.data;
         console.log("Update result:", result);
         toast.success("Sound updated successfully");
       } else {
-        result = await createSound(formData, accessToken);
+        // Send JSON data with URLs to backend for create
+        const axiosInstance = createAxiosInstance(accessToken);
+        const response = await axiosInstance.post("/sounds/add-sounds", soundData, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 30000, // 30 seconds for JSON requests
+        });
+        result = response.data;
         console.log("Create result:", result);
         toast.success("Sound created successfully");
       }
@@ -210,10 +290,8 @@ export default function AddOrUpdateSound({
     } catch (error) {
       console.error("Error details:", error);
 
-      if (error.response?.status === 413) {
-        toast.error(
-          "File too large! Please reduce the file size and try again. Max: 10MB for audio, 5MB for images."
-        );
+      if (error.message.includes('DigitalOcean Spaces configuration incomplete')) {
+        toast.error("File upload service not configured. Please contact administrator.");
       } else if (error.response?.status === 400) {
         toast.error(
           `Validation error: ${error.response.data?.message || "Invalid data"}`
@@ -231,7 +309,6 @@ export default function AddOrUpdateSound({
       }
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -438,20 +515,16 @@ export default function AddOrUpdateSound({
                     <div className="flex h-5 items-center">
                       <input
                         id={`category-${category._id}`}
-                        name="category"
-                        value={category._id}
                         type="checkbox"
-                        defaultChecked={
-                          selectedSound?.categories?.includes(category._id) ||
-                          false
-                        }
+                        checked={selectedCategories.includes(category._id)}
+                        onChange={(e) => handleCategoryChange(category._id, e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </div>
                     <div className="ml-3 text-sm">
                       <label
                         htmlFor={`category-${category._id}`}
-                        className="font-medium text-gray-700"
+                        className="font-medium text-gray-700 cursor-pointer"
                       >
                         {category.name}
                       </label>
