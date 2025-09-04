@@ -862,3 +862,6 @@ export const removeDiscountFromPrice = async (
     throw new Error(errorMsg);
   }
 };
+
+// Export the createAxiosInstance function
+export { createAxiosInstance };
