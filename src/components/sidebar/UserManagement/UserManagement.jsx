@@ -7,7 +7,7 @@ import { AuthContext } from "../../../context/authContext";
 import {
   getAllUsers,
   updateUserStatus,
-  updateUserType,
+  // updateUserType,
   getUserSubscriptionDetails,
   deleteUserById,
   updateUserPlanStatus,
@@ -179,7 +179,7 @@ const UserManagement = () => {
         accessToken
       );
       console.log("userSubscriptionHistory", userSubscriptionHistory);
-      setSubscriptionHistory(userSubscriptionHistory.subscription);
+      setSubscriptionHistory(userSubscriptionHistory);
     } catch {
       toast.error("Error fetching subscription history");
     }
