@@ -1,5 +1,5 @@
 // Direct upload service for DigitalOcean Spaces using AWS S3 SDK
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 class DirectUploadService {
   constructor() {
@@ -8,9 +8,17 @@ class DirectUploadService {
     this.region = import.meta.env.VITE_DO_SPACES_REGION;
     this.accessKey = import.meta.env.VITE_DO_SPACES_KEY;
     this.secretKey = import.meta.env.VITE_DO_SPACES_SECRET;
-    
-    if (!this.bucket || !this.endpoint || !this.region || !this.accessKey || !this.secretKey) {
-      console.warn('DigitalOcean Spaces configuration incomplete. Some environment variables are missing.');
+
+    if (
+      !this.bucket ||
+      !this.endpoint ||
+      !this.region ||
+      !this.accessKey ||
+      !this.secretKey
+    ) {
+      console.warn(
+        "DigitalOcean Spaces configuration incomplete. Some environment variables are missing."
+      );
     }
 
     // Initialize S3 client for DigitalOcean Spaces
@@ -30,19 +38,19 @@ class DirectUploadService {
    */
   getEnvironmentPath() {
     const isProduction = import.meta.env.NODE_ENV;
-    return isProduction == "production"? 'prod' : 'dev';
+    return isProduction == "production" ? "prod" : "dev";
   }
 
   /**
    * Generate unique object key for file with environment-based path
    */
-  generateObjectKey(file, prefix = '') {
+  generateObjectKey(file, prefix = "") {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split('.').pop();
-    const fileName = file.name.replace(`.${fileExtension}`, '');
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9]/g, '_');
-    
+    const fileExtension = file.name.split(".").pop();
+    const fileName = file.name.replace(`.${fileExtension}`, "");
+    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9]/g, "_");
+
     const environmentPath = this.getEnvironmentPath();
     return `${environmentPath}/${prefix}${timestamp}_${randomString}_${sanitizedFileName}.${fileExtension}`;
   }
@@ -50,18 +58,23 @@ class DirectUploadService {
   /**
    * Upload file directly to DigitalOcean Spaces using AWS SDK
    */
-  async uploadFileWithProgress(file, objectKey, contentType = null, onProgress = null) {
+  async uploadFileWithProgress(
+    file,
+    objectKey,
+    contentType = null,
+    onProgress = null
+  ) {
     if (!contentType) {
-      contentType = file.type || 'application/octet-stream';
+      contentType = file.type || "application/octet-stream";
     }
 
     try {
-      console.log('Uploading file directly to DigitalOcean Spaces:', {
+      console.log("Uploading file directly to DigitalOcean Spaces:", {
         objectKey,
         fileSize: file.size,
         contentType,
         bucket: this.bucket,
-        endpoint: this.endpoint
+        endpoint: this.endpoint,
       });
 
       // Convert File to Uint8Array for AWS SDK
@@ -74,53 +87,93 @@ class DirectUploadService {
         Key: objectKey,
         Body: uint8Array,
         ContentType: contentType,
-        ACL: 'public-read',
-        CacheControl: 'public, max-age=31536000',
+        ACL: "public-read",
+        CacheControl: "public, max-age=31536000",
         Metadata: {
-          'original-filename': file.name,
-          'upload-timestamp': new Date().toISOString(),
-          'file-size': file.size.toString()
-        }
+          "original-filename": file.name,
+          "upload-timestamp": new Date().toISOString(),
+          "file-size": file.size.toString(),
+        },
       });
 
-      // Simple progress simulation
-      if (onProgress) {
-        onProgress(0, file.size, 0);
-        setTimeout(() => onProgress(file.size, file.size, 100), 1000);
-      }
+      // Calculate estimated upload time based on file size
+      const calculateUploadTime = (fileSize) => {
+        // Estimate upload speed based on file size (slower for larger files)
+        let estimatedSpeed; // bytes per second
+
+        if (fileSize < 1024 * 1024) {
+          // < 1MB
+          estimatedSpeed = 100000; // 200KB/s
+        } else if (fileSize < 10 * 1024 * 1024) {
+          // < 10MB
+          estimatedSpeed = 200000; // 400KB/s
+        } else if (fileSize < 50 * 1024 * 1024) {
+          // < 50MB
+          estimatedSpeed = 400000; // 800KB/s
+        } else {
+          // >= 50MB
+          estimatedSpeed = 800000; // 1.5MB/s
+        }
+
+        return (fileSize / estimatedSpeed) * 1000; // minimum 3 seconds
+      };
+
+      const estimatedUploadTime = calculateUploadTime(file.size);
+      const startTime = Date.now();
+
+      const progressInterval = onProgress
+        ? setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progressValue = Math.min(
+              95,
+              (elapsed / estimatedUploadTime) * 100
+            );
+            const loaded = Math.floor((file.size * progressValue) / 100);
+            onProgress(loaded, file.size, Math.round(progressValue));
+          }, 100)
+        : null;
 
       // Execute upload using AWS SDK
-      console.log('Sending upload command...');
+      console.log("Sending upload command...");
       const result = await this.s3Client.send(uploadCommand);
-      console.log('Upload result:', result);
+
+      // Clear progress interval and complete
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+
+      // Complete progress
+      if (onProgress) {
+        onProgress(file.size, file.size, 100);
+      }
+      console.log("Upload result:", result);
 
       // Return the public URL
       const fileUrl = `https://${this.bucket}.${this.endpoint}/${objectKey}`;
-      
-      console.log('File uploaded successfully to DigitalOcean Spaces:', {
+
+      console.log("File uploaded successfully to DigitalOcean Spaces:", {
         objectKey,
         fileSize: file.size,
         fileUrl,
-        etag: result.ETag
+        etag: result.ETag,
       });
 
       // Test if file is accessible
       setTimeout(async () => {
         try {
           const testResponse = await fetch(fileUrl);
-          console.log('File accessibility test:', {
+          console.log("File accessibility test:", {
             status: testResponse.status,
-            accessible: testResponse.ok
+            accessible: testResponse.ok,
           });
         } catch (error) {
-          console.error('File accessibility test failed:', error);
+          console.error("File accessibility test failed:", error);
         }
       }, 2000);
 
       return fileUrl;
-
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
       throw new Error(`Upload failed: ${error.message}`);
     }
   }
@@ -130,7 +183,7 @@ class DirectUploadService {
    */
   getFileUrl(objectKey) {
     if (!this.bucket || !this.endpoint) {
-      throw new Error('DigitalOcean Spaces configuration incomplete');
+      throw new Error("DigitalOcean Spaces configuration incomplete");
     }
     return `https://${this.bucket}.${this.endpoint}/${objectKey}`;
   }
@@ -139,7 +192,13 @@ class DirectUploadService {
    * Check if service is properly configured
    */
   isConfigured() {
-    return !!(this.bucket && this.endpoint && this.region && this.accessKey && this.secretKey);
+    return !!(
+      this.bucket &&
+      this.endpoint &&
+      this.region &&
+      this.accessKey &&
+      this.secretKey
+    );
   }
 }
 
