@@ -190,8 +190,6 @@ const UserManagement = () => {
     setSubscriptionHistory([]);
   };
 
-  // Filter data locally for display
-
   const filteredSubscriptionHistory = subscriptionHistory?.filter(
     (history) =>
       history.plan.toLowerCase().includes(subscriptionSearch.toLowerCase()) &&
