@@ -52,8 +52,8 @@ function Sidebar({ onMenuItemClick }) {
             { name: "Categories", icon: <CgList size={20} /> },
             { name: "SoundManagement", icon: <TbMusicCog size={20} /> },
             { name: "UserManagement", icon: <FaUser size={20} /> },
-            { name: "DiscountManagement", icon: <FaMoneyBillTrendUp size={20} /> },
-            { name: "PriceManagement", icon: <FaMoneyBill size={20} /> },
+            // { name: "DiscountManagement", icon: <FaMoneyBillTrendUp size={20} /> },
+            // { name: "PriceManagement", icon: <FaMoneyBill size={20} /> },
             { name: "ActivationCodes", icon: <CgList size={20} /> }, // New tab for Activation Codes
             { name: "Settings", icon: <IoSettings size={20} /> },
           ].map((item) => (

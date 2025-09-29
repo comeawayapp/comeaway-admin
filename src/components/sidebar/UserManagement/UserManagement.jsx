@@ -179,7 +179,7 @@ const UserManagement = () => {
         accessToken
       );
       console.log("userSubscriptionHistory", userSubscriptionHistory);
-      setSubscriptionHistory(userSubscriptionHistory);
+      setSubscriptionHistory(userSubscriptionHistory.subscriptions);
     } catch {
       toast.error("Error fetching subscription history");
     }
@@ -190,11 +190,13 @@ const UserManagement = () => {
     setSubscriptionHistory([]);
   };
 
-  const filteredSubscriptionHistory = subscriptionHistory?.filter(
-    (history) =>
-      history.plan.toLowerCase().includes(subscriptionSearch.toLowerCase()) &&
-      history._id.toString().includes(transactionIdSearch)
-  );
+  // const filteredSubscriptionHistory = subscriptionHistory.filter(
+  //   (history) =>
+  //     history.plan.toLowerCase().includes(subscriptionSearch.toLowerCase()) &&
+  //     history._id.toString().includes(transactionIdSearch)
+  // );
+
+  const filteredSubscriptionHistory = subscriptionHistory;
 
   const offset = currentPage * itemsPerPage;
   const currentPageData = Array.isArray(userData)
@@ -278,7 +280,7 @@ const UserManagement = () => {
                         Transaction ID
                       </th>
                       <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
-                        Subscription Name
+                        Plan
                       </th>
                       <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
                         Status
