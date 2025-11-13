@@ -510,13 +510,7 @@ const EntitlementManagement = () => {
 
     setEmailLoading(true);
     try {
-      const emailData = {
-        assignedTo: emailToSend.assignedTo || emailToSend.customerEmail,
-        productName: emailToSend.productName,
-        customerName: emailToSend.customerName || "",
-      };
-
-      await sendEntitlementEmail(emailData, accessToken);
+      await sendEntitlementEmail({ id: emailToSend._id }, accessToken);
       toast.success("Email sent successfully!");
       setShowEmailConfirmation(false);
       setEmailToSend(null);
