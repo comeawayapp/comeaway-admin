@@ -10,6 +10,7 @@ import UserManagement from "./sidebar/UserManagement/UserManagement";
 import Settings from "./sidebar/Settings/Settings";
 import CategoryManagement from "./sidebar/CategoryManagment/CategoryManagement";
 import ActivationCodeManagement from "./sidebar/ActivationCodeManagement/ActivationCodeManagement";
+import EntitlementManagement from "./sidebar/EntitlementManagement/EntitlementManagement";
 import DiscountManagement from "./sidebar/DiscountManagement/DiscountManagement";
 import PriceManagement from "./sidebar/PriceManagement/PriceManagement";
 function Home() {
@@ -36,6 +37,8 @@ function Home() {
         return <Settings />;
       case "ActivationCodes":
         return <ActivationCodeManagement accessToken={accessToken} />;
+      case "EntitlementManagement":
+        return <EntitlementManagement accessToken={accessToken} />;
       case "DiscountManagement":
         return <DiscountManagement />;
       case "PriceManagement":

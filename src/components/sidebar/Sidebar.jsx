@@ -1,12 +1,12 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
+import PropTypes from "prop-types";
 import { CgList } from "react-icons/cg";
-import { FaUser, FaBars, FaTimes, FaMoneyBill } from "react-icons/fa";
+import { FaUser, FaBars, FaTimes } from "react-icons/fa";
 import { IoSettings } from "react-icons/io5";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { MdLogout } from "react-icons/md";
 import { TbMusicCog } from "react-icons/tb";
 import { AuthContext } from "../../context/authContext";
-import { FaMoneyBillTrendUp } from "react-icons/fa6";
 
 function Sidebar({ onMenuItemClick }) {
   const { logout } = useContext(AuthContext);
@@ -54,7 +54,8 @@ function Sidebar({ onMenuItemClick }) {
             { name: "UserManagement", icon: <FaUser size={20} /> },
             // { name: "DiscountManagement", icon: <FaMoneyBillTrendUp size={20} /> },
             // { name: "PriceManagement", icon: <FaMoneyBill size={20} /> },
-            { name: "ActivationCodes", icon: <CgList size={20} /> }, // New tab for Activation Codes
+            // { name: "ActivationCodes", icon: <CgList size={20} /> }, // New tab for Activation Codes
+            { name: "EntitlementManagement", icon: <CgList size={20} /> }, // New tab for Entitlement Management
             { name: "Settings", icon: <IoSettings size={20} /> },
           ].map((item) => (
             <li key={item.name} className="mt-5">
@@ -107,5 +108,9 @@ function Sidebar({ onMenuItemClick }) {
     </div>
   );
 }
+
+Sidebar.propTypes = {
+  onMenuItemClick: PropTypes.func.isRequired,
+};
 
 export default Sidebar;

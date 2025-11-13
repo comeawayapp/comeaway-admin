@@ -20,7 +20,7 @@ const createAxiosInstance = (accessToken) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    // timeout:1000000, // 10 minutes for large file uploads 
+    // timeout:1000000, // 10 minutes for large file uploads
     withCredentials: false, // Important for CORS
   });
 
@@ -729,6 +729,91 @@ export const redeemActivationCode = async (code, accessToken) => {
   const endpoint = "/activation-codes/activation-codes/redeem";
   try {
     const response = await axiosInstance.post(endpoint, { code });
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+// Entitlement Management API Functions
+export const createEntitlement = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/entitlements/admin/entitlements";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const getEntitlements = async (accessToken, query = {}) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/entitlements/admin/entitlements";
+  try {
+    const response = await axiosInstance.get(endpoint, { params: query });
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const deleteEntitlement = async (id, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/entitlements/admin/entitlements/${id}`;
+  try {
+    const response = await axiosInstance.delete(endpoint);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const editEntitlement = async (id, data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/entitlements/admin/entitlements/${id}`;
+  try {
+    const response = await axiosInstance.put(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const importEntitlements = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/entitlements/admin/entitlements/import";
+  try {
+    const response = await axiosInstance.post(endpoint, { entitlements: data });
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const sendEntitlementEmail = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/entitlements/admin/entitlements/send-to-user";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    const errorMsg = error.response?.data?.error || error.message;
+    throw new Error(errorMsg);
+  }
+};
+
+export const redeemEntitlement = async (entitlementId, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/entitlements/entitlements/redeem";
+  try {
+    const response = await axiosInstance.post(endpoint, { entitlementId });
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;
