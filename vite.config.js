@@ -30,19 +30,19 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, "/api"),
         configure: (proxy, options) => {
           proxy.on("error", (err, req, res) => {
-            console.log("proxy error", err);
+            // console.log("proxy error", err);
           });
           proxy.on("proxyReq", (proxyReq, req, res) => {
-            console.log("Sending Request to the Target:", req.method, req.url);
+            // console.log("Sending Request to the Target:", req.method, req.url);
             // Set timeout for large file uploads
             proxyReq.setTimeout(300000); // 5 minutes
           });
           proxy.on("proxyRes", (proxyRes, req, res) => {
-            console.log(
-              "Received Response from the Target:",
-              proxyRes.statusCode,
-              req.url
-            );
+            // console.log(
+            //   "Received Response from the Target:",
+            //   proxyRes.statusCode,
+            //   req.url
+            // );
           });
         },
         headers: {

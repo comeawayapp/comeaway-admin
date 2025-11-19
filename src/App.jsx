@@ -1,9 +1,14 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import './App.css';
-import Login from './pages/login/Login';
-import Home from './components/Home';
-import { AuthProvider, AuthContext } from './context/authContext';
+import React, { useContext, useEffect, useState } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
+import "./App.css";
+import Login from "./pages/login/Login";
+import Home from "./components/Home";
+import { AuthProvider, AuthContext } from "./context/authContext";
 
 function App() {
   const { isAuthenticated } = useContext(AuthContext);
@@ -13,7 +18,7 @@ function App() {
   useEffect(() => {
     // Simulate initialization process
     setIsInitialized(true); // Mark as initialized after checking authentication
-    console.log("Authentication status changed:", isAuthenticated);
+    // console.log("Authentication status changed:", isAuthenticated);
   }, [isAuthenticated]);
 
   if (!isInitialized) {
@@ -25,7 +30,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/*" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
+        <Route
+          path="/*"
+          element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
+        />
       </Routes>
     </Router>
   );

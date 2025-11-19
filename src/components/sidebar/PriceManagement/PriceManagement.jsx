@@ -52,7 +52,7 @@ const PriceManagement = () => {
     setError("");
     try {
       const response = await getPrices(accessToken);
-      console.log(response);
+      // console.log(response);
       setPrices(response.prices || []);
     } catch (err) {
       setError(err.message);

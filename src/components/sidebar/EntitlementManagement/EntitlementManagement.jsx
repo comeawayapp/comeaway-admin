@@ -664,11 +664,11 @@ const EntitlementManagement = () => {
           .map((line) => parseCSVLine(line, headers));
 
         const jsonData = JSON.stringify(importData, null, 2);
-        console.log("CSV converted to JSON:", jsonData);
-        console.log("CSV converted to JSON:", importData);
+        // console.log("CSV converted to JSON:", jsonData);
+        // console.log("CSV converted to JSON:", importData);
 
         const result = await importEntitlements(importData, accessToken);
-        console.log("Import API response:", result);
+        // console.log("Import API response:", result);
 
         toast.success(result.message);
         fetchEntitlements();

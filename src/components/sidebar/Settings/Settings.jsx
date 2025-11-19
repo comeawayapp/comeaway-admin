@@ -11,16 +11,16 @@ const Settings = () => {
 
     const [profile, setProfile] = useState({});
     const [password, setPassword] = useState('');
-console.log(profile);
+// console.log(profile);
     
     useEffect(() => {
         if (user && user._id) {
             async function fetchUserData() {
                 try {
                     const userData = await getUserById(user._id, accessToken);
-                    console.log(userData);
+                    // console.log(userData);
                     setProfile(userData);
-                    console.log(profile);
+                    // console.log(profile);
                     
                 } catch (error) {
                     toast.error('Error fetching user data');
@@ -30,7 +30,7 @@ console.log(profile);
         }
     }, [user, accessToken]);
 
-    console.log(profile);
+    // console.log(profile);
     const handleProfileImageChange = (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();

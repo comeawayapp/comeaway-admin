@@ -185,7 +185,7 @@ export default function AddOrUpdateSound({
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    console.log("Selected categories:", selectedCategories);
+    // console.log("Selected categories:", selectedCategories);
 
     // Validate files are selected
     if (!selectedSound && !soundFile) {
@@ -212,13 +212,13 @@ export default function AddOrUpdateSound({
       if (soundFile) {
         // Get sound duration before upload
         soundDuration = await getSoundDuration(soundFile);
-        console.log("Sound duration:", soundDuration, "seconds");
+        // console.log("Sound duration:", soundDuration, "seconds");
 
         const soundObjectKey = directUploadService.generateObjectKey(
           soundFile,
           "sounds/"
         );
-        console.log("Sound object key:", soundObjectKey);
+        // console.log("Sound object key:", soundObjectKey);
         soundFileUrl = await directUploadService.uploadFileWithProgress(
           soundFile,
           soundObjectKey,
@@ -227,10 +227,10 @@ export default function AddOrUpdateSound({
             const progress = percent || 0;
             setSoundUploadProgress(progress);
             setUploadStatus(`Uploading sound file... ${progress.toFixed(1)}%`);
-            console.log(`Sound upload progress: ${progress.toFixed(1)}%`);
+            // console.log(`Sound upload progress: ${progress.toFixed(1)}%`);
           }
         );
-        console.log("Sound file uploaded directly to Spaces:", soundFileUrl);
+        // console.log("Sound file uploaded directly to Spaces:", soundFileUrl);
         setUploadStatus("Sound file uploaded successfully!");
       } else if (selectedSound?.soundFile) {
         soundFileUrl = selectedSound.soundFile;
@@ -250,10 +250,10 @@ export default function AddOrUpdateSound({
             const progress = percent || 0;
             setThumbnailUploadProgress(progress);
             setUploadStatus(`Uploading thumbnail... ${progress.toFixed(1)}%`);
-            console.log(`Thumbnail upload progress: ${progress.toFixed(1)}%`);
+            // console.log(`Thumbnail upload progress: ${progress.toFixed(1)}%`);
           }
         );
-        console.log("Thumbnail uploaded directly to Spaces:", thumbnailUrl);
+        // console.log("Thumbnail uploaded directly to Spaces:", thumbnailUrl);
         setUploadStatus("Thumbnail uploaded successfully!");
       } else if (selectedSound?.thumbnail) {
         thumbnailUrl = selectedSound.thumbnail;
@@ -271,7 +271,7 @@ export default function AddOrUpdateSound({
         addedDate: new Date().toISOString(),
       };
 
-      console.log("Sound data to send (URLs only):", soundData);
+      // console.log("Sound data to send (URLs only):", soundData);
 
       // Send only URLs to backend (FAST!)
       setUploadStatus("Saving sound data...");
@@ -290,7 +290,7 @@ export default function AddOrUpdateSound({
           }
         );
         result = response.data;
-        console.log("Update result:", result);
+        // console.log("Update result:", result);
         toast.success("Sound updated successfully");
       } else {
         // Send JSON data with URLs to backend for create
@@ -306,12 +306,12 @@ export default function AddOrUpdateSound({
           }
         );
         result = response.data;
-        console.log("Create result:", result);
+        // console.log("Create result:", result);
         toast.success("Sound created successfully");
       }
 
       // Pass the result to onSave if available, otherwise call with no params to trigger refetch
-      console.log("Calling onSave with:", result?.data || null);
+      // console.log("Calling onSave with:", result?.data || null);
       onSave(result?.data || null);
       setCurrentView("main");
     } catch (error) {

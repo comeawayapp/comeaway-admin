@@ -28,7 +28,7 @@ const createAxiosInstance = (accessToken) => {
   instance.interceptors.request.use(
     (config) => {
       if (!isProduction) {
-        console.log("Making request to:", config.baseURL + config.url);
+        // console.log("Making request to:", config.baseURL + config.url);
       }
       return config;
     },
@@ -70,10 +70,10 @@ const createAxiosInstances = (accessToken) => {
   instance.interceptors.request.use(
     (config) => {
       if (!isProduction) {
-        console.log(
-          "Making multipart request to:",
-          config.baseURL + config.url
-        );
+        // console.log(
+        //   "Making multipart request to:",
+        //   config.baseURL + config.url
+        // );
       }
       return config;
     },
@@ -887,7 +887,7 @@ export const getPrices = async (accessToken) => {
   const endpoint = "/prices/all";
   try {
     const response = await axiosInstance.get(endpoint);
-    console.log(response.data);
+    // console.log(response.data);
     return response.data;
   } catch (error) {
     const errorMsg = error.response?.data?.error || error.message;
@@ -926,7 +926,7 @@ export const assignDiscountToPrice = async (data, accessToken) => {
     const response = await axiosInstance.post(endpoint, data);
     return response.data;
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     const errorMsg = error.response?.data?.message || error.message;
     throw new Error(errorMsg);
   }

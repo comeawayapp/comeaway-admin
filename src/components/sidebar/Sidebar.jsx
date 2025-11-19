@@ -23,7 +23,7 @@ function Sidebar({ onMenuItemClick }) {
   };
 
   const handleLogout = () => {
-    console.log("Logout button clicked");
+    // console.log("Logout button clicked");
     logout();
   };
 

@@ -69,13 +69,13 @@ class DirectUploadService {
     }
 
     try {
-      console.log("Uploading file directly to DigitalOcean Spaces:", {
-        objectKey,
-        fileSize: file.size,
-        contentType,
-        bucket: this.bucket,
-        endpoint: this.endpoint,
-      });
+      // console.log("Uploading file directly to DigitalOcean Spaces:", {
+      //   objectKey,
+      //   fileSize: file.size,
+      //   contentType,
+      //   bucket: this.bucket,
+      //   endpoint: this.endpoint,
+      // });
 
       // Convert File to Uint8Array for AWS SDK
       const arrayBuffer = await file.arrayBuffer();
@@ -134,7 +134,7 @@ class DirectUploadService {
         : null;
 
       // Execute upload using AWS SDK
-      console.log("Sending upload command...");
+      // console.log("Sending upload command...");
       const result = await this.s3Client.send(uploadCommand);
 
       // Clear progress interval and complete
@@ -146,26 +146,26 @@ class DirectUploadService {
       if (onProgress) {
         onProgress(file.size, file.size, 100);
       }
-      console.log("Upload result:", result);
+      // console.log("Upload result:", result);
 
       // Return the public URL
       const fileUrl = `https://${this.bucket}.${this.endpoint}/${objectKey}`;
 
-      console.log("File uploaded successfully to DigitalOcean Spaces:", {
-        objectKey,
-        fileSize: file.size,
-        fileUrl,
-        etag: result.ETag,
-      });
+      // console.log("File uploaded successfully to DigitalOcean Spaces:", {
+      //   objectKey,
+      //   fileSize: file.size,
+      //   fileUrl,
+      //   etag: result.ETag,
+      // });
 
       // Test if file is accessible
       setTimeout(async () => {
         try {
           const testResponse = await fetch(fileUrl);
-          console.log("File accessibility test:", {
-            status: testResponse.status,
-            accessible: testResponse.ok,
-          });
+          // console.log("File accessibility test:", {
+          //   status: testResponse.status,
+          //   accessible: testResponse.ok,
+          // });
         } catch (error) {
           console.error("File accessibility test failed:", error);
         }

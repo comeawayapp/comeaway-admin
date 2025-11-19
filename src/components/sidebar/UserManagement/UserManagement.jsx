@@ -31,7 +31,7 @@ const UserManagement = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const itemsPerPage = 20;
 
-  console.log(subscriptionHistory);
+  // console.log(subscriptionHistory);
 
   useEffect(() => {
     if (accessToken) fetchUsers();
@@ -64,7 +64,7 @@ const UserManagement = () => {
       }
 
       const users = await getAllUsers(accessToken, queryParams);
-      console.log("users", users.users);
+      // console.log("users", users.users);
       setUserData(users.users);
     } catch (err) {
       setFetchError(err.message);
@@ -127,7 +127,11 @@ const UserManagement = () => {
   const handleUserTypeUpdate = async () => {
     if (selectedUser && selectedUserType) {
       try {
-        await updateUserPlanStatus(selectedUser._id, selectedUserType, accessToken);
+        await updateUserPlanStatus(
+          selectedUser._id,
+          selectedUserType,
+          accessToken
+        );
         const updatedUsers = Array.isArray(userData)
           ? userData.map((user) =>
               user._id === selectedUser._id
@@ -172,13 +176,13 @@ const UserManagement = () => {
 
     setSelectedStatus(user.status);
     setSelectedUserType(user.isPro ? "pro" : "standard");
-    console.log(user._id);
+    // console.log(user._id);
     try {
       const userSubscriptionHistory = await getUserSubscriptionDetails(
         user._id,
         accessToken
       );
-      console.log("userSubscriptionHistory", userSubscriptionHistory);
+      // console.log("userSubscriptionHistory", userSubscriptionHistory);
       setSubscriptionHistory(userSubscriptionHistory.subscriptions);
     } catch {
       toast.error("Error fetching subscription history");

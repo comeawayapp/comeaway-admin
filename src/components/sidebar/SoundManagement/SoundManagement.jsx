@@ -48,7 +48,7 @@ export default function SoundManagement() {
         const reversedSounds = soundsData.reverse();
         setSounds(reversedSounds);
         setFilteredSounds(reversedSounds);
-        console.log(reversedSounds);
+        // console.log(reversedSounds);
       } catch (error) {
         toast.error("Error fetching sounds");
       }
@@ -66,7 +66,7 @@ export default function SoundManagement() {
     fetchSounds();
     fetchCategories();
   }, [accessToken, currentView]);
-  console.log(categories, "categories");
+  // console.log(categories, "categories");
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -107,7 +107,7 @@ export default function SoundManagement() {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      console.log(itemToDelete);
+      // console.log(itemToDelete);
       try {
         await deleteSound(itemToDelete._id, accessToken);
         toast.success("Sound deleted successfully");
@@ -125,11 +125,11 @@ export default function SoundManagement() {
   };
 
   const handleSoundSave = async (newSound) => {
-    console.log("handleSoundSave called with:", newSound);
+    // console.log("handleSoundSave called with:", newSound);
     try {
       // If no sound data is passed, refetch the sounds list
       if (!newSound) {
-        console.log("No sound data provided, refetching sounds list...");
+        // console.log("No sound data provided, refetching sounds list...");
         const soundsData = await getSounds(accessToken);
         const reversedSounds = soundsData.reverse();
         setSounds(reversedSounds);
@@ -137,7 +137,7 @@ export default function SoundManagement() {
       } else {
         // Handle the case where sound data is passed (legacy behavior)
         if (selectedSound) {
-          console.log("Updating existing sound...");
+          // console.log("Updating existing sound...");
           const updatedSounds = sounds.map((sound) =>
             sound.id === newSound.id || sound._id === newSound._id
               ? newSound
@@ -146,7 +146,7 @@ export default function SoundManagement() {
           setSounds(updatedSounds);
           setFilteredSounds(updatedSounds);
         } else {
-          console.log("Adding new sound...");
+          // console.log("Adding new sound...");
           // For new sounds, add to the list
           const updatedSounds = [...sounds, newSound];
           setSounds(updatedSounds);
@@ -507,9 +507,9 @@ export default function SoundManagement() {
                   </h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Are you sure you want to delete &quot;{itemToDelete?.title}"?
-                      This action cannot be undone.
-                    </p>  
+                      Are you sure you want to delete &quot;
+                      {itemToDelete?.title}"? This action cannot be undone.
+                    </p>
                   </div>
                 </div>
               </div>

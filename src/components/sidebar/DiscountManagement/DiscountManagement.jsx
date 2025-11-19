@@ -113,7 +113,9 @@ const DiscountManagement = () => {
 
         <div className="py-1">
           {assignDiscount.some(
-            (assignment) => assignment?.availableDiscounts[0]?.couponCode === discount?.couponCode
+            (assignment) =>
+              assignment?.availableDiscounts[0]?.couponCode ===
+              discount?.couponCode
           ) ? (
             <button
               onClick={(e) => {
@@ -188,7 +190,7 @@ const DiscountManagement = () => {
     setError("");
     try {
       const response = await getPrices(accessToken);
-      console.log(response);
+      // console.log(response);
       setPrices(response.prices || []);
     } catch (err) {
       setError(err.message);
@@ -232,7 +234,7 @@ const DiscountManagement = () => {
 
   const fetchAssignments = useCallback(async () => {
     const response = await getAllAssignments(accessToken);
-    console.log("assignments", response.prices);
+    // console.log("assignments", response.prices);
     setAssignDiscount(response.prices || []);
   }, [accessToken]);
 
@@ -264,7 +266,7 @@ const DiscountManagement = () => {
 
       // Call the API to get discounts
       const response = await getDiscounts(accessToken);
-      console.log(response.discounts);
+      // console.log(response.discounts);
       setDiscounts(response.discounts || []);
     } catch (err) {
       setFetchError(err.message);
@@ -306,9 +308,9 @@ const DiscountManagement = () => {
     }
     setLoading(true);
     try {
-      console.log(form);
+      // console.log(form);
       const response = await createDiscount(form, accessToken);
-      console.log(response);
+      // console.log(response);
       setSuccess("Discount created successfully.");
       setForm(initialState);
       setFormOpen(false);
@@ -328,13 +330,13 @@ const DiscountManagement = () => {
   };
 
   const handleAddToPrice = useCallback((discount) => {
-    console.log("discount", discount);
+    // console.log("discount", discount);
     setDiscountToAdd(discount);
     setShowAddToPrice(true);
   }, []);
 
   const handleRemoveFromPrice = useCallback((discount) => {
-    console.log("discount", discount);
+    // console.log("discount", discount);
     setDiscountToRemove(discount);
     setShowRemoveFromPrice(true);
   }, []);
