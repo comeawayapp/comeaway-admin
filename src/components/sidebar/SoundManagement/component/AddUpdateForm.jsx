@@ -388,7 +388,7 @@ export default function AddOrUpdateSound({
               htmlFor="description"
               className="block text-sm font-medium text-gray-700"
             >
-              Sound Description
+              Sound Description (optional)
             </label>
             <textarea
               id="description"
@@ -407,7 +407,7 @@ export default function AddOrUpdateSound({
                 className="block text-sm font-medium text-gray-700"
               >
                 Upload Sound{" "}
-                <span className="text-gray-500 text-xs">(Max: 20MB)</span>
+                {/* <span className="text-gray-500 text-xs">(Max: 20MB)</span> */}
               </label>
               <div className="flex items-center justify-center w-full">
                 <label

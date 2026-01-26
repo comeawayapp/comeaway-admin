@@ -45,9 +45,9 @@ export default function SoundManagement() {
     async function fetchSounds() {
       try {
         const soundsData = await getSounds(accessToken);
-        const reversedSounds = soundsData.reverse();
-        setSounds(reversedSounds);
-        setFilteredSounds(reversedSounds);
+        // const reversedSounds = soundsDat;
+        setSounds(soundsData);
+        setFilteredSounds(soundsData);
         // console.log(reversedSounds);
       } catch (error) {
         toast.error("Error fetching sounds");
@@ -131,9 +131,9 @@ export default function SoundManagement() {
       if (!newSound) {
         // console.log("No sound data provided, refetching sounds list...");
         const soundsData = await getSounds(accessToken);
-        const reversedSounds = soundsData.reverse();
-        setSounds(reversedSounds);
-        setFilteredSounds(reversedSounds);
+        // const reversedSounds = soundsData.reverse();
+        setSounds(soundsData);
+        setFilteredSounds(soundsData);
       } else {
         // Handle the case where sound data is passed (legacy behavior)
         if (selectedSound) {
