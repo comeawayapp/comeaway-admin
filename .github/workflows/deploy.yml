@@ -1,0 +1,70 @@
+name: Deploy ComeAway Admin
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: comeaway-admin-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to DigitalOcean
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DO_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy admin dashboard
+        env:
+          DO_HOST: ${{ secrets.DO_HOST }}
+          DO_USER: ${{ secrets.DO_USER }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$DO_USER@$DO_HOST" 'bash -se' <<'EOF'
+
+            set -e
+
+            cd /root/comeaway-admin
+
+            if [ -s "$HOME/.nvm/nvm.sh" ]; then
+              . "$HOME/.nvm/nvm.sh"
+              nvm use 20
+            fi
+
+            echo "Fetching main..."
+            git fetch origin main
+
+            echo "Updating source..."
+            git checkout main
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            npm ci
+
+            echo "Building dashboard..."
+            npm run build
+
+            echo "Restarting dashboard..."
+            pm2 restart admin-dashboard --update-env
+            pm2 save
+
+            echo "PM2 status:"
+            pm2 status admin-dashboard
+
+            echo "Deployment successful!"
+
+          EOF
