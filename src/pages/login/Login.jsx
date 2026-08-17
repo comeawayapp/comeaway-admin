@@ -52,7 +52,7 @@ function Login() {
                 type="email"
                 id="email"
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-black bg-white leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="EnterEmail"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
