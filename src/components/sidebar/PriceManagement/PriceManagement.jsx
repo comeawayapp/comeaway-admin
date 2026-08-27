@@ -255,7 +255,7 @@ const PriceManagement = () => {
 
   //   return (
   //     <div
-  //       className="fixed w-48 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden"
+  //       className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
   //       style={{
   //         left: position.x,
   //         top: position.y,
@@ -275,7 +275,7 @@ const PriceManagement = () => {
   //             handleViewPrice(price);
   //             onClose();
   //           }}
-  //           className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+  //           className="dropdown-item"
   //         >
   //           <FaEye className="mr-3 h-4 w-4 text-gray-500" />
   //           View Details
@@ -298,9 +298,9 @@ const PriceManagement = () => {
 
   if (fetching) {
     return (
-      <div className="container mx-auto p-4">
+      <div className="page">
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-center mt-6">
+          <h1 className="page-title">
             Price Management
           </h1>
         </div>
@@ -313,9 +313,9 @@ const PriceManagement = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto p-4">
+      <div className="page">
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-center mt-6">
+          <h1 className="page-title">
             Price Management
           </h1>
         </div>
@@ -327,15 +327,15 @@ const PriceManagement = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="page">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-center mt-6">
+        <h1 className="page-title">
           Price Management
         </h1>
       </div>
 
       {selectedPrice ? (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           <button
             onClick={handleBackToTable}
             className="mb-4 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition-colors"
@@ -343,7 +343,7 @@ const PriceManagement = () => {
             ← Back to Table
           </button>
           <div className="bg-gray-100 p-6 rounded shadow-md">
-            <h2 className="text-3xl font-bold mb-6 text-center">
+            <h2 className="page-title">
               Price Plan Details
             </h2>
             <div className="grid grid-cols-2 gap-4">
@@ -398,7 +398,7 @@ const PriceManagement = () => {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           {/* Search and Filter Controls */}
           <div className="mb-6">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -408,7 +408,7 @@ const PriceManagement = () => {
                   <select
                     value={searchField}
                     onChange={(e) => setSearchField(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                   >
                     <option value="planName">Plan Name</option>
                     <option value="planType">Plan Type</option>
@@ -428,7 +428,7 @@ const PriceManagement = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                   >
                     <option value="">All Status</option>
                     <option value="active">Active</option>
@@ -443,8 +443,8 @@ const PriceManagement = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+          <div className="table-wrap">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th className="py-3 px-4 border-b border-gray-300 text-left bg-gray-100 font-semibold">
@@ -549,7 +549,7 @@ const PriceManagement = () => {
 
       {/* Edit Form Overlay */}
       {showEditForm && editingPrice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="modal-overlay">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800">
@@ -580,7 +580,7 @@ const PriceManagement = () => {
                 {/* <div className="flex flex-col gap-2">
                   <label
                     htmlFor="editPlanName"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Plan Name <span className="text-red-500">*</span>
                   </label>
@@ -610,14 +610,14 @@ const PriceManagement = () => {
                 {/* <div className="flex flex-col gap-2">
                   <label
                     htmlFor="editPlanType"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Plan Type
                   </label>
                   <select
                     id="editPlanType"
                     name="planType"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                     value={editForm.planType}
                     onChange={(e) =>
                       setEditForm({
@@ -634,7 +634,7 @@ const PriceManagement = () => {
                 <div className="flex flex-col gap-2">
                   <label
                     htmlFor="editBasePrice"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Price <span className="text-red-500">*</span>
                   </label>
@@ -668,14 +668,14 @@ const PriceManagement = () => {
                 {/* <div className="flex flex-col gap-2">
                   <label
                     htmlFor="editCurrency"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Currency
                   </label>
                   <select
                     id="editCurrency"
                     name="currency"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                     value={editForm.currency}
                     onChange={(e) =>
                       setEditForm({
@@ -694,7 +694,7 @@ const PriceManagement = () => {
               {/* <div className="flex flex-col gap-2">
                 <label
                   htmlFor="editDescription"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Description <span className="text-red-500">*</span>
                 </label>
@@ -757,12 +757,11 @@ const PriceManagement = () => {
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="px-6 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   {editLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="spinner"></div>
                       Updating...
                     </>
                   ) : (
@@ -777,12 +776,12 @@ const PriceManagement = () => {
 
       {/* Delete Confirmation Overlay */}
       {showDeleteConfirmation && priceToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">
               Confirm Deletion
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="card-description mb-6">
               Are you sure you want to delete the price plan{" "}
               <span className="font-semibold">{priceToDelete.planName}</span>?
             </p>
@@ -790,7 +789,7 @@ const PriceManagement = () => {
               This action cannot be undone and will permanently remove the price
               plan.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={handleCancelDelete}
                 disabled={deleteLoading}
@@ -805,7 +804,7 @@ const PriceManagement = () => {
               >
                 {deleteLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="spinner"></div>
                     Deleting...
                   </>
                 ) : (

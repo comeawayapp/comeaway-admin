@@ -1,151 +1,172 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { FaPencilAlt } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { AuthContext } from '../../../context/authContext';
-import { getUserById, updateAdminDetails } from '../../../utils/API_SERVICE';
-
+import { useState, useEffect, useContext } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { AuthContext, ROLE_LABELS } from "../../../context/authContext";
+import { getUserById, updateAdminDetails } from "../../../utils/API_SERVICE";
 
 const Settings = () => {
-    const { accessToken, user } = useContext(AuthContext);
+  const { accessToken, user, role } = useContext(AuthContext);
 
-    const [profile, setProfile] = useState({});
-    const [password, setPassword] = useState('');
-// console.log(profile);
-    
-    useEffect(() => {
-        if (user && user._id) {
-            async function fetchUserData() {
-                try {
-                    const userData = await getUserById(user._id, accessToken);
-                    // console.log(userData);
-                    setProfile(userData);
-                    // console.log(profile);
-                    
-                } catch (error) {
-                    toast.error('Error fetching user data');
-                }
-            }
-            fetchUserData();
-        }
-    }, [user, accessToken]);
+  const [profile, setProfile] = useState({});
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
 
-    // console.log(profile);
-    const handleProfileImageChange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-
-        reader.onloadend = () => {
-            setProfile({ ...profile, profileImage: reader.result });
-        };
-
-        if (file) {
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setProfile({ ...profile, [name]: value });
-    };
-
-    const handlePasswordChange = (e) => {
-        setPassword(e.target.value);
-    };
-
-    const handleUpdate = async (e) => {
-        e.preventDefault();
+  useEffect(() => {
+    if (user && user._id) {
+      async function fetchUserData() {
         try {
-            const updatedProfile = await updateAdminDetails(
-                profile._id,
-                profile.firstname,
-                profile.lastname,
-                profile.email,
-                // profile.status,
-                password,
-                accessToken
-            );
-            setProfile(updatedProfile);
-            toast.success('Profile updated successfully!');
-        } catch (error) {
-            toast.error('Error updating profile');
+          const userData = await getUserById(user._id, accessToken);
+          setProfile(userData);
+        } catch {
+          toast.error("Error fetching user data");
         }
-    };
+      }
+      fetchUserData();
+    }
+  }, [user, accessToken]);
 
-    return (
-        <div className="container mx-auto p-4">
-            <div className="mb-10">
-                <h1 className="text-4xl font-bold text-center mt-6">Profile Settings</h1>
-            </div>
-            <div className="container mx-auto p-4 bg-white rounded shadow-md max-w-xl">
-                <form onSubmit={handleUpdate} className="space-y-4">
-                    <div className="flex items-center justify-center">
-                        {/* <div className="relative">
-                            <img
-                                src={profile.profileImage}
-                                alt="Profile"
-                                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-                            />
-                            <label
-                                htmlFor="profileImage"
-                                className="absolute bottom-0 right-0 bg-gray-800 text-white rounded-full p-1 cursor-pointer"
-                            >
-                                <FaPencilAlt />
-                            </label>
-                            <input
-                                type="file"
-                                id="profileImage"
-                                className="hidden"
-                                onChange={handleProfileImageChange}
-                            />
-                        </div> */}
-                    </div>
-                    <div className="flex gap-4">
-                        <input
-                            type="text"
-                            name="firstname"
-                            placeholder="First Name"
-                            value={profile.firstname}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border rounded-full"
-                        />
-                        <input
-                            type="text"
-                            name="lastname"
-                            placeholder="Last Name"
-                            value={profile.lastname}
-                            onChange={handleInputChange}
-                            className="w-full px-3 py-2 border rounded-full"
-                        />
-                    </div>
-                    <input
-                        type="email"
-                        name="email"
-                        disabled
-                        placeholder="Email"
-                        value={profile.email}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border rounded-full bg-gray-100"
-                    />
-                    <input
-                        type="password"
-                        placeholder="Change Password"
-                        value={password}
-                        onChange={handlePasswordChange}
-                        className="w-full px-3 py-2 border rounded-full"
-                    />
-                    <button
-                        type="submit"
-                        className="w-full px-3 py-2 text-white rounded-full"
-                        style={{ backgroundColor: '#439AB8' }}
-                    >
-                        Update
-                    </button>
-                </form>
-            </div>
-            <ToastContainer />
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfile({ ...profile, [name]: value });
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const updatedProfile = await updateAdminDetails(
+        profile._id,
+        profile.firstname,
+        profile.lastname,
+        profile.email,
+        password,
+        accessToken
+      );
+      setProfile(updatedProfile);
+      setPassword("");
+      toast.success("Profile updated successfully!");
+    } catch {
+      toast.error("Error updating profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const initials = `${profile.firstname?.[0] || ""}${
+    profile.lastname?.[0] || ""
+  }`.toUpperCase();
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Profile Settings</h1>
+          <p className="page-subtitle">
+            Update the name and password on your admin account.
+          </p>
         </div>
-    );
+      </div>
+
+      <div className="card" style={{ maxWidth: 640 }}>
+        <div className="card-header">
+          <div className="flex items-center gap-3">
+            <span
+              className="user-avatar"
+              style={{ width: 42, height: 42, fontSize: 14 }}
+            >
+              {initials || "?"}
+            </span>
+            <div>
+              <h2 className="card-title">
+                {[profile.firstname, profile.lastname]
+                  .filter(Boolean)
+                  .join(" ") || "Your profile"}
+              </h2>
+              <p className="card-description">{profile.email}</p>
+            </div>
+          </div>
+          <span className="badge badge-brand">
+            {ROLE_LABELS[role] || "Team Member"}
+          </span>
+        </div>
+
+        <form onSubmit={handleUpdate}>
+          <div className="card-body">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="field">
+                <label className="field-label" htmlFor="firstname">
+                  First Name
+                </label>
+                <input
+                  id="firstname"
+                  type="text"
+                  name="firstname"
+                  placeholder="First name"
+                  value={profile.firstname || ""}
+                  onChange={handleInputChange}
+                  className="input"
+                />
+              </div>
+              <div className="field">
+                <label className="field-label" htmlFor="lastname">
+                  Last Name
+                </label>
+                <input
+                  id="lastname"
+                  type="text"
+                  name="lastname"
+                  placeholder="Last name"
+                  value={profile.lastname || ""}
+                  onChange={handleInputChange}
+                  className="input"
+                />
+              </div>
+            </div>
+
+            <div className="field mt-4">
+              <label className="field-label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                disabled
+                value={profile.email || ""}
+                className="input"
+              />
+              <p className="kpi-meta mt-2">
+                Your sign-in email cannot be changed here.
+              </p>
+            </div>
+
+            <div className="field mt-4">
+              <label className="field-label" htmlFor="new-password">
+                New Password
+              </label>
+              <input
+                id="new-password"
+                type="password"
+                placeholder="Leave blank to keep your current password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button type="submit" disabled={saving} className="btn btn-primary">
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <ToastContainer position="top-right" />
+    </div>
+  );
 };
 
 export default Settings;

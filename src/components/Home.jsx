@@ -13,15 +13,41 @@ import ActivationCodeManagement from "./sidebar/ActivationCodeManagement/Activat
 import EntitlementManagement from "./sidebar/EntitlementManagement/EntitlementManagement";
 import DiscountManagement from "./sidebar/DiscountManagement/DiscountManagement";
 import PriceManagement from "./sidebar/PriceManagement/PriceManagement";
+import TeamManagement from "./sidebar/TeamManagement/TeamManagement";
+import {
+  isMenuItemAllowed,
+  loadSection,
+  saveSection,
+} from "./sidebar/menuConfig";
 function Home() {
-  const { accessToken } = useContext(AuthContext);
-  const [selectedContent, setSelectedContent] = useState("Dashboard");
+  const { accessToken, role } = useContext(AuthContext);
+  const [selectedContent, setSelectedContent] = useState(() =>
+    loadSection(role)
+  );
 
   const handleMenuItemClick = (content) => {
     setSelectedContent(content);
+    saveSection(content);
   };
 
   const renderContent = () => {
+    // Belt and braces: the sidebar already hides disallowed sections, but the
+    // API would reject these calls anyway, so show a clear message instead.
+    if (!isMenuItemAllowed(selectedContent, role)) {
+      return (
+        <div className="page">
+          <div className="card">
+            <div className="card-body empty-state">
+              <p className="card-title">Access denied</p>
+              <p className="mt-2">
+                Your role does not have permission to view this section.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     switch (selectedContent) {
       case "Dashboard":
         return <Dashboard />;
@@ -43,17 +69,19 @@ function Home() {
         return <DiscountManagement />;
       case "PriceManagement":
         return <PriceManagement />;
+      case "TeamManagement":
+        return <TeamManagement />;
       default:
         return <Dashboard />;
     }
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-200">
+    <div className="app-shell">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="app-body">
         <Sidebar onMenuItemClick={handleMenuItemClick} />
-        <div className="flex-grow p-4 overflow-y-auto">{renderContent()}</div>
+        <main className="app-main">{renderContent()}</main>
       </div>
     </div>
   );

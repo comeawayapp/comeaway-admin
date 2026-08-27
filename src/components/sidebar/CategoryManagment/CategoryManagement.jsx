@@ -80,107 +80,104 @@ export default function CategoryManagement() {
       <div className="grid grid-cols-1 gap-6">
         <div className="flex justify-end">
           <button
-            className="w-400 py-3 px-4 inline-flex justify-center items-center gap-2 rounded-md text-white transition-colors text-sm font-medium"
+            className="btn btn-primary"
             onClick={() => {
               setSelectedCategory(null);
               setCurrentView("updateCategory");
             }}
-            style={{ backgroundColor: '#439AB8' }}
           >
             <Plus className="h-5 w-5" />
             Add New Category
           </button>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow overflow-x-auto">
-          <div className="p-6 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-            <h3 className="text-xl font-bold">Categories</h3>
-            <p className="text-gray-500 mt-1">List of categories</p>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Categories</h3>
+              <p className="card-description">List of categories</p>
+            </div>
           </div>
-          <div className="p-6">
+          <div className="card-body">
             <div className="relative mb-6 grid grid-cols-4 gap-4 min-w-full">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by serial no..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.serial}
                   onChange={(e) => setSearchFilters({ ...searchFilters, serial: e.target.value })}
                 />
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by category name..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.name}
                   onChange={(e) => setSearchFilters({ ...searchFilters, name: e.target.value })}
                 />
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by category slug..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.slug}
                   onChange={(e) => setSearchFilters({ ...searchFilters, slug: e.target.value })}
                 />
               </div>
               {/* <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by assigned sound..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.count}
                   onChange={(e) => setSearchFilters({ ...searchFilters, count: e.target.value })}
                 />
               </div> */}
             </div>
 
-            <div className="rounded-md border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
                   <tr>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Serial No.
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Category Name
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Category Slug
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Assigned Sound
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="cell-actions"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {paginatedCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-6 text-center text-gray-500">
+                      <td colSpan={5} className="empty-state">
                         No categories found matching your search
                       </td>
                     </tr>
@@ -189,14 +186,14 @@ export default function CategoryManagement() {
                       const assignedSounds = sounds.filter(sound => sound.categories.includes(category._id)).length;
                       return (
                         <tr key={category._id}>
-                          <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{categories.findIndex(cat => cat._id === category._id) + 1}</td>
-                          <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{category.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">{category.slug}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">{assignedSounds}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="cell-strong">{categories.findIndex(cat => cat._id === category._id) + 1}</td>
+                          <td className="cell-strong">{category.name}</td>
+                          <td>{category.slug}</td>
+                          <td>{assignedSounds}</td>
+                          <td className="cell-actions">
                             <div className="flex justify-end gap-2">
                               <button
-                                className="inline-flex items-center p-1.5 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                className="btn btn-icon btn-secondary"
                                 onClick={() => {
                                   setSelectedCategory(category);
                                   setCurrentView("updateCategory");
@@ -205,7 +202,7 @@ export default function CategoryManagement() {
                                 <Edit className="h-4 w-4" />
                               </button>
                               <button
-                                className="inline-flex items-center p-1.5 border border-transparent rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                className="btn btn-icon btn-danger-soft"
                                 onClick={() => {
                                   setItemToDelete(category);
                                   setShowDeleteConfirm(true);
@@ -290,8 +287,8 @@ export default function CategoryManagement() {
     };
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-md">
-        <div className="p-6 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+      <div className="card">
+        <div className="card-header">
           <div className="flex items-center">
             <button
               className="mr-2 p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -300,22 +297,22 @@ export default function CategoryManagement() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h3 className="text-xl font-bold">{selectedCategory ? "Update Category" : "Add New Category"}</h3>
-              <p className="text-gray-500 mt-1">Fill in the details below</p>
+              <h3 className="card-title">{selectedCategory ? "Update Category" : "Add New Category"}</h3>
+              <p className="card-description">Fill in the details below</p>
             </div>
           </div>
         </div>
-        <div className="p-6">
+        <div className="card-body">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label htmlFor="category-name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="category-name" className="field-label">
                 Category Name
               </label>
               <input
                 id="category-name"
                 name="categoryName"
                 type="text"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input"
                 placeholder="Enter category name"
                 defaultValue={selectedCategory?.name || ""}
                 required
@@ -323,14 +320,14 @@ export default function CategoryManagement() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="category-slug" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="category-slug" className="field-label">
                 Category Slug
               </label>
               <input
                 id="category-slug"
                 name="categorySlug"
                 type="text"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="input"
                 placeholder="Enter category slug"
                 defaultValue={selectedCategory?.slug || ""}
                 required
@@ -340,15 +337,14 @@ export default function CategoryManagement() {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn btn-secondary"
                 onClick={() => setCurrentView("main")}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                style={{ backgroundColor: '#439AB8' }}
+                className="btn btn-primary"
               >
                 {selectedCategory ? "Save Category" : "Add Category"}
               </button>
@@ -392,14 +388,14 @@ export default function CategoryManagement() {
             <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="button"
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                className="btn btn-danger"
                 onClick={handleDeleteConfirm}
               >
                 Delete
               </button>
               <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="btn btn-secondary"
                   onClick={() => setShowDeleteConfirm(false)}
                 >
                   Cancel
@@ -413,8 +409,8 @@ export default function CategoryManagement() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Categories Management</h1>
+    <div className="page">
+      <h1 className="page-title">Categories Management</h1>
 
       {currentView === "main" && renderMainView()}
       {currentView === "updateCategory" && renderUpdateCategory()}

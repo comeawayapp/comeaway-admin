@@ -233,28 +233,29 @@ export default function SoundManagement() {
       <div className="grid grid-cols-1 gap-6">
         <div className="flex justify-end">
           <button
-            className="w-400 py-3 px-4 inline-flex justify-center items-center gap-2 rounded-md text-white transition-colors text-sm font-medium"
+            className="btn btn-primary"
             onClick={() => setCurrentView("addSound")}
-            style={{ backgroundColor: "#439AB8" }}
           >
             <Plus className="h-5 w-5" />
             Add New Sound
           </button>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-md hover:shadow-lg transition-shadow overflow-x-auto">
-          <div className="p-6 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-            <h3 className="text-xl font-bold">Sounds</h3>
-            <p className="text-gray-500 mt-1">List of sounds</p>
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h3 className="card-title">Sounds</h3>
+              <p className="card-description">List of sounds</p>
+            </div>
           </div>
-          <div className="p-6">
+          <div className="card-body">
             <div className="relative mb-6 grid grid-cols-4 gap-4 min-w-full">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by serial no..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.serial}
                   onChange={(e) =>
                     setSearchFilters({
@@ -265,11 +266,11 @@ export default function SoundManagement() {
                 />
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by title..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.title}
                   onChange={(e) =>
                     setSearchFilters({
@@ -280,11 +281,11 @@ export default function SoundManagement() {
                 />
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by category..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.category}
                   onChange={(e) =>
                     setSearchFilters({
@@ -295,11 +296,11 @@ export default function SoundManagement() {
                 />
               </div>
               <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="input-icon" />
                 <input
                   type="text"
                   placeholder="Search by status..."
-                  className="pl-8 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="input input-with-icon"
                   value={searchFilters.status}
                   onChange={(e) =>
                     setSearchFilters({
@@ -311,54 +312,49 @@ export default function SoundManagement() {
               </div>
             </div>
 
-            <div className="rounded-md border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
                   <tr>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Sr No.
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Title
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Category
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Status
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Upload Status
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="cell-actions"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {paginatedSounds.length === 0 ? (
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-6 py-6 text-center text-gray-500"
+                        className="empty-state"
                       >
                         No sounds found matching your search
                       </td>
@@ -369,10 +365,10 @@ export default function SoundManagement() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {index + 1 + (currentPage - 1) * itemsPerPage}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                        <td className="cell-strong">
                           {sound.title}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                        <td>
                           {getCategoryNames(sound.categories)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -402,10 +398,10 @@ export default function SoundManagement() {
                             );
                           })()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td className="cell-actions">
                           <div className="flex justify-end gap-2">
                             <button
-                              className="inline-flex items-center p-1.5 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              className="btn btn-icon btn-secondary"
                               onClick={() => {
                                 setSelectedSound(sound);
                                 setCurrentView("updateSound");
@@ -414,7 +410,7 @@ export default function SoundManagement() {
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
-                              className="inline-flex items-center p-1.5 border border-transparent rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              className="btn btn-icon btn-danger-soft"
                               onClick={() => {
                                 setItemToDelete(sound);
                                 setShowDeleteConfirm(true);
@@ -517,14 +513,14 @@ export default function SoundManagement() {
             <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="button"
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                className="btn btn-danger"
                 onClick={handleDeleteConfirm}
               >
                 Delete
               </button>
               <button
                 type="button"
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                className="btn btn-secondary"
                 onClick={() => setShowDeleteConfirm(false)}
               >
                 Cancel
@@ -537,8 +533,8 @@ export default function SoundManagement() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center">Sounds Management</h1>
+    <div className="page">
+      <h1 className="page-title">Sounds Management</h1>
 
       {currentView === "main" && renderMainView()}
       {currentView === "addSound" && (
