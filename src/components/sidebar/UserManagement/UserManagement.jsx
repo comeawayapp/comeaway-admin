@@ -208,21 +208,21 @@ const UserManagement = () => {
     : [];
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="page">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-center mt-6">User Management</h1>
+        <h1 className="page-title">User Management</h1>
       </div>
       {selectedUser ? (
         <div className="container mx-auto p-4 bg-white rounded shadow-md flex">
           <div className="w-2/3">
             <button
               onClick={handleBackToTable}
-              className="mb-4 px-4 py-2 bg-gray-400 text-white rounded"
+              className="btn btn-secondary mb-4"
             >
               Back
             </button>
             <div className="bg-gray-100 p-6 rounded shadow-md">
-              <h2 className="text-3xl font-bold mb-6 text-center">
+              <h2 className="page-title">
                 User Details
               </h2>
               <div className="mb-4">
@@ -257,7 +257,7 @@ const UserManagement = () => {
               </div>
             </div>
             <div className="width-600 bg-gray-100 p-6 rounded shadow-md mt-6">
-              <h2 className="text-3xl font-bold mb-6 text-center">
+              <h2 className="page-title">
                 Subscription History
               </h2>
               <div className="mb-4 flex justify-between space-x-4">
@@ -276,23 +276,23 @@ const UserManagement = () => {
                   className="px-4 py-2 border rounded w-full"
                 />
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+              <div className="table-wrap">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                      <th>
                         Transaction ID
                       </th>
-                      <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                      <th>
                         Plan
                       </th>
-                      <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                      <th>
                         Status
                       </th>
-                      <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                      <th>
                         Start Date
                       </th>
-                      <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                      <th>
                         End Date
                       </th>
                     </tr>
@@ -300,26 +300,26 @@ const UserManagement = () => {
                   <tbody>
                     {filteredSubscriptionHistory.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-4">
+                        <td colSpan={5} className="empty-state">
                           No subscription history found.
                         </td>
                       </tr>
                     ) : (
                       filteredSubscriptionHistory.map((history) => (
                         <tr key={history._id} className="hover:bg-gray-50">
-                          <td className="py-2 px-4 border-b border-gray-300">
+                          <td>
                             {history._id}
                           </td>
-                          <td className="py-2 px-4 border-b border-gray-300">
+                          <td>
                             {history.plan}
                           </td>
-                          <td className="py-2 px-4 border-b border-gray-300">
+                          <td>
                             {history.status}
                           </td>
-                          <td className="py-2 px-4 border-b border-gray-300">
+                          <td>
                             {new Date(history.startDate).toLocaleDateString()}
                           </td>
-                          <td className="py-2 px-4 border-b border-gray-300">
+                          <td>
                             {new Date(history.endDate).toLocaleDateString()}
                           </td>
                         </tr>
@@ -339,15 +339,14 @@ const UserManagement = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-2 border rounded w-full mb-4"
+                className="select mb-4"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
               <button
                 onClick={handleStatusUpdate}
-                className="px-4 py-2 text-white rounded w-full"
-                style={{ backgroundColor: "#439AB8" }}
+                className="btn btn-primary w-full"
               >
                 Update
               </button>
@@ -362,15 +361,14 @@ const UserManagement = () => {
                 value={selectedUserType}
                 // value={sel}
                 onChange={(e) => setSelectedUserType(e.target.value)}
-                className="px-4 py-2 border rounded w-full mb-4"
+                className="select mb-4"
               >
                 <option value="standard">Standard</option>
                 <option value="pro">Pro</option>
               </select>
               <button
                 onClick={handleUserTypeUpdate}
-                className="px-4 py-2 text-white rounded w-full"
-                style={{ backgroundColor: "#439AB8" }}
+                className="btn btn-primary w-full"
               >
                 Update
               </button>
@@ -378,23 +376,23 @@ const UserManagement = () => {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           <div className="mb-4 flex gap-4">
             <div className="relative flex-1">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <FaSearch className="input-icon" />
               <input
                 type="text"
                 placeholder="Search by first name, last name or email"
                 value={userNameSearch}
                 onChange={handleUserNameSearchChange}
-                className="pl-10 pr-4 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                className="input input-with-icon"
               />
             </div>
             <div className="flex-1">
               <select
                 value={userTypeFilter}
                 onChange={handleUserTypeFilterChange}
-                className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                className="select"
               >
                 <option value="">All User Types</option>
                 <option value="standard">Standard</option>
@@ -402,29 +400,29 @@ const UserManagement = () => {
               </select>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+          <div className="table-wrap">
+            <table className="data-table">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Email
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     First Name
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Last Name
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Status
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Type
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Activation Method
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Actions
                   </th>
                 </tr>
@@ -432,7 +430,7 @@ const UserManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-4">
+                    <td colSpan={6} className="empty-state">
                       Loading users...
                     </td>
                   </tr>
@@ -444,55 +442,66 @@ const UserManagement = () => {
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-4">
+                    <td colSpan={6} className="empty-state">
                       No users found.
                     </td>
                   </tr>
                 ) : (
                   currentPageData.map((user) => (
                     <tr key={user._id} className="hover:bg-gray-50">
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {user.email}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {user.firstname}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {user.lastname}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        {user.status}
-                      </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            user.userType === "Pro"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
+                          className={`badge ${
+                            user.status === "active" ? "badge-success" : "badge-danger"
                           }`}
                         >
-                          {user.userType}
+                          {user.status === "active" ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
+                        {user.userType ? (
+                          <span
+                            className={`badge ${
+                              user.userType === "Pro"
+                                ? "badge-warning"
+                                : "badge-success"
+                            }`}
+                          >
+                            {user.userType}
+                          </span>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                      <td>
                         {user.activationMethod}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300 flex gap-2">
-                        <button
-                          onClick={() => handleUserPreview(user)}
-                          className="px-3 py-1 rounded text-white"
-                          style={{ backgroundColor: "#439AB8" }}
-                          title="View"
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="px-3 py-1 rounded text-white bg-red-600 hover:bg-red-700"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
+                      <td className="cell-actions">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => handleUserPreview(user)}
+                            className="btn btn-icon btn-secondary"
+                            title="View"
+                          >
+                            <FaEye />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user._id)}
+                            className="btn btn-icon btn-danger-soft"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -526,12 +535,12 @@ const UserManagement = () => {
 
       {/* Delete Confirmation Overlay */}
       {showDeleteConfirmation && userToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">
               Confirm User Deletion
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="card-description mb-6">
               Are you sure you want to delete the user{" "}
               <span className="font-semibold">
                 {userToDelete.firstname} {userToDelete.lastname}
@@ -542,7 +551,7 @@ const UserManagement = () => {
               This action cannot be undone and will permanently remove the user
               account.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={handleCancelDelete}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"

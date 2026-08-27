@@ -5,6 +5,16 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
+// Staff roles returned by the API. `null` means the account is a regular
+// customer and has no business being in the admin panel.
+export const STAFF_ROLES = ['owner', 'admin', 'content_manager'];
+
+export const ROLE_LABELS = {
+  owner: 'Owner',
+  admin: 'Admin',
+  content_manager: 'Content Manager',
+};
+
 export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,8 +73,28 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const role = user?.role ?? null;
+  const isOwner = role === 'owner';
+  const isAdmin = role === 'admin';
+  const isContentManager = role === 'content_manager';
+  // Owner and Admin can both invite; only the Owner can list/remove members.
+  const canInviteTeam = isOwner || isAdmin;
+
   return (
-    <AuthContext.Provider value={{ accessToken, isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        isAuthenticated,
+        user,
+        role,
+        isOwner,
+        isAdmin,
+        isContentManager,
+        canInviteTeam,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

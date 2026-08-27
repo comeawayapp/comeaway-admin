@@ -948,5 +948,101 @@ export const removeDiscountFromPrice = async (
   }
 };
 
+// ---------------------------------------------------------------------------
+// Admin Dashboard API
+// ---------------------------------------------------------------------------
+
+// Aggregated dashboard metrics (Owner or Admin). `year` drives the
+// subscriptions-sold-per-month bar chart and defaults to the current year
+// server-side. Returns { success, data: { totalUsers, newSubscriptions,
+// revenue, totalMonthlySubscriptions, totalAnnualSubscriptions,
+// subscriptionsSoldPerMonth, meta } }.
+export const getAdminDashboard = async (accessToken, year) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/admin/dashboard";
+  try {
+    const response = await axiosInstance.get(endpoint, {
+      params: year ? { year } : {},
+    });
+    return response.data;
+  } catch (error) {
+    const err = new Error(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to fetch dashboard metrics"
+    );
+    err.status = error.response?.status;
+    throw err;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Team Management API Functions
+// Roles: owner | admin | content_manager  (null = regular customer)
+// ---------------------------------------------------------------------------
+
+// Normalises an axios error into an Error carrying the HTTP status, so callers
+// can distinguish cases like 409 (already on team) from 403 (not permitted).
+const toTeamError = (error, fallback) => {
+  const data = error.response?.data;
+  const message = data?.message || data?.error || error.message || fallback;
+  const err = new Error(message);
+  err.status = error.response?.status;
+  return err;
+};
+
+// Invite a team member. Owner may invite "admin" or "content_manager";
+// Admin may invite "content_manager" only.
+export const inviteTeamMember = async (data, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/team/invite";
+  try {
+    const response = await axiosInstance.post(endpoint, data);
+    return response.data;
+  } catch (error) {
+    throw toTeamError(error, "Failed to send invitation");
+  }
+};
+
+// List team members (Owner only). Returns { team: [...], total }.
+export const getTeam = async (accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/team";
+  try {
+    const response = await axiosInstance.get(endpoint);
+    return response.data;
+  } catch (error) {
+    throw toTeamError(error, "Failed to fetch team members");
+  }
+};
+
+// Remove a team member (Owner only). Demotes the user back to a customer.
+export const removeTeamMember = async (userId, accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = `/team/${userId}`;
+  try {
+    const response = await axiosInstance.delete(endpoint);
+    return response.data;
+  } catch (error) {
+    throw toTeamError(error, "Failed to remove team member");
+  }
+};
+
+// Accept an invite and set a password. Public endpoint - the invitee is not
+// signed in yet, so this uses a bare axios call with no Authorization header.
+export const acceptTeamInvite = async (token, password) => {
+  const endpoint = "/team/accept-invite";
+  try {
+    const response = await axios.post(`${API_BASE_URL}${endpoint}`, {
+      token,
+      password,
+    });
+    return response.data;
+  } catch (error) {
+    throw toTeamError(error, "Failed to accept invitation");
+  }
+};
+
 // Export the createAxiosInstance function
 export { createAxiosInstance };

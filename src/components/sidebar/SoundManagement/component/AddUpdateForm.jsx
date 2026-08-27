@@ -347,8 +347,8 @@ export default function AddOrUpdateSound({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-md">
-      <div className="p-6 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+    <div className="card">
+      <div className="card-header">
         <div className="flex items-center">
           <button
             className="mr-2 p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -357,19 +357,19 @@ export default function AddOrUpdateSound({
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h3 className="text-xl font-bold">
+            <h3 className="card-title">
               {selectedSound ? "Update Sound" : "Add New Sound"}
             </h3>
-            <p className="text-gray-500 mt-1">Fill in the details below</p>
+            <p className="card-description">Fill in the details below</p>
           </div>
         </div>
       </div>
-      <div className="p-6">
+      <div className="card-body">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
+              className="field-label"
             >
               Sound Title
             </label>
@@ -377,7 +377,7 @@ export default function AddOrUpdateSound({
               id="title"
               name="title"
               type="text"
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="input"
               placeholder="Enter sound title"
               defaultValue={selectedSound?.title || ""}
             />
@@ -386,14 +386,14 @@ export default function AddOrUpdateSound({
           <div className="space-y-2">
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
+              className="field-label"
             >
               Sound Description (optional)
             </label>
             <textarea
               id="description"
               name="description"
-              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="input"
               placeholder="Enter sound description"
               rows={3}
               defaultValue={selectedSound?.description || ""}
@@ -404,7 +404,7 @@ export default function AddOrUpdateSound({
             <div className="space-y-2">
               <label
                 htmlFor="sound-file"
-                className="block text-sm font-medium text-gray-700"
+                className="field-label"
               >
                 Upload Sound{" "}
                 {/* <span className="text-gray-500 text-xs">(Max: 20MB)</span> */}
@@ -470,7 +470,7 @@ export default function AddOrUpdateSound({
             <div className="space-y-2">
               <label
                 htmlFor="thumbnail"
-                className="block text-sm font-medium text-gray-700"
+                className="field-label"
               >
                 Upload Thumbnail{" "}
                 <span className="text-gray-500 text-xs">(Max: 5MB)</span>
@@ -539,7 +539,7 @@ export default function AddOrUpdateSound({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="field-label">
               Assign Categories
             </label>
             <div className="border border-gray-300 rounded-md p-4 space-y-2">
@@ -572,7 +572,7 @@ export default function AddOrUpdateSound({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="field-label">
               Set Status
             </label>
             <div className="space-y-2">
@@ -616,7 +616,7 @@ export default function AddOrUpdateSound({
           <div className="p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg flex justify-end gap-2">
             <button
               type="button"
-              className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="btn btn-secondary"
               onClick={() => setCurrentView("main")}
             >
               Cancel
@@ -624,10 +624,9 @@ export default function AddOrUpdateSound({
             <button
               type="submit"
               disabled={isUploading}
-              className={`py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              className={`py-2 px-4 btn-primary border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                 isUploading ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              style={{ backgroundColor: "#439AB8" }}
             >
               {isUploading ? (
                 <div className="flex items-center">
