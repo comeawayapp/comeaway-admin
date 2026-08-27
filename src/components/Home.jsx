@@ -13,15 +13,34 @@ import ActivationCodeManagement from "./sidebar/ActivationCodeManagement/Activat
 import EntitlementManagement from "./sidebar/EntitlementManagement/EntitlementManagement";
 import DiscountManagement from "./sidebar/DiscountManagement/DiscountManagement";
 import PriceManagement from "./sidebar/PriceManagement/PriceManagement";
+import TeamManagement from "./sidebar/TeamManagement/TeamManagement";
+import { isMenuItemAllowed, getDefaultSection } from "./sidebar/menuConfig";
 function Home() {
-  const { accessToken } = useContext(AuthContext);
-  const [selectedContent, setSelectedContent] = useState("Dashboard");
+  const { accessToken, role } = useContext(AuthContext);
+  const [selectedContent, setSelectedContent] = useState(() =>
+    getDefaultSection(role)
+  );
 
   const handleMenuItemClick = (content) => {
     setSelectedContent(content);
   };
 
   const renderContent = () => {
+    // Belt and braces: the sidebar already hides disallowed sections, but the
+    // API would reject these calls anyway, so show a clear message instead.
+    if (!isMenuItemAllowed(selectedContent, role)) {
+      return (
+        <div className="container mx-auto py-8 px-4">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-md p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-900">Access Denied</h2>
+            <p className="text-gray-500 mt-2">
+              Your role does not have permission to view this section.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     switch (selectedContent) {
       case "Dashboard":
         return <Dashboard />;
@@ -43,6 +62,8 @@ function Home() {
         return <DiscountManagement />;
       case "PriceManagement":
         return <PriceManagement />;
+      case "TeamManagement":
+        return <TeamManagement />;
       default:
         return <Dashboard />;
     }

@@ -1,17 +1,23 @@
 import { useContext, useState } from "react";
 import PropTypes from "prop-types";
 import { CgList } from "react-icons/cg";
-import { FaUser, FaBars, FaTimes } from "react-icons/fa";
+import { FaUser, FaUsers, FaBars, FaTimes } from "react-icons/fa";
 import { IoSettings } from "react-icons/io5";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { MdLogout } from "react-icons/md";
 import { TbMusicCog } from "react-icons/tb";
 import { AuthContext } from "../../context/authContext";
+import {
+  MENU_ITEMS,
+  isMenuItemAllowed,
+  getDefaultSection,
+} from "./menuConfig";
 
 function Sidebar({ onMenuItemClick }) {
-  const { logout } = useContext(AuthContext);
+  const { logout, role } = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("Dashboard");
+  // Keep the highlight in step with the section Home opens by default.
+  const [activeTab, setActiveTab] = useState(() => getDefaultSection(role));
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -56,8 +62,9 @@ function Sidebar({ onMenuItemClick }) {
             // { name: "PriceManagement", icon: <FaMoneyBill size={20} /> },
             // { name: "ActivationCodes", icon: <CgList size={20} /> }, // New tab for Activation Codes
             { name: "EntitlementManagement", icon: <CgList size={20} /> }, // New tab for Entitlement Management
+            { name: "TeamManagement", icon: <FaUsers size={20} /> }, // Owner/Admin only
             { name: "Settings", icon: <IoSettings size={20} /> },
-          ].map((item) => (
+          ].filter((item) => isMenuItemAllowed(item.name, role)).map((item) => (
             <li key={item.name} className="mt-5">
               <button
                 onClick={() => handleMenuItemClick(item.name)}
@@ -82,7 +89,7 @@ function Sidebar({ onMenuItemClick }) {
                       activeTab === item.name ? "text-black" : "text-white"
                     }`}
                   >
-                    {item.name}
+                    {MENU_ITEMS[item.name]?.label || item.name}
                   </span>
                 )}
               </button>

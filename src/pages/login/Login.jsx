@@ -5,7 +5,7 @@ import logo from '../../assets/logo.png';
 import companyname from '../../assets/companyname.png';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AuthContext } from '../../context/authContext';
+import { AuthContext, STAFF_ROLES } from '../../context/authContext';
 import { login } from '../../utils/API_SERVICE';
 
 function Login() {
@@ -18,8 +18,8 @@ function Login() {
     e.preventDefault();
     try {
       const response = await login(email, password);
-      if (response.user.role !== 'admin') {
-        toast.error('Access Denied: Only admins can log in');
+      if (!STAFF_ROLES.includes(response.user.role)) {
+        toast.error('Access Denied: Only team members can log in');
         return;
       }
       toast.success('Login Successful');
