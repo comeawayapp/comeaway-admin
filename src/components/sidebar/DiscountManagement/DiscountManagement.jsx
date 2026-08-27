@@ -75,7 +75,7 @@ const DiscountManagement = () => {
 
     return createPortal(
       <div
-        className="fixed w-64 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden portal-dropdown"
+        className="fixed w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden portal-dropdown"
         style={{
           left: position.x,
           top: position.y,
@@ -83,7 +83,7 @@ const DiscountManagement = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Dropdown header */}
-        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="dropdown-header">
           <p className="text-xs font-medium text-gray-600">
             Actions for {discount.couponCode}
           </p>
@@ -135,7 +135,7 @@ const DiscountManagement = () => {
                 handleAddToPrice(discount);
                 onClose();
               }}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+              className="dropdown-item"
             >
               <FaPlus className="mr-3 h-4 w-4 text-gray-500" />
               Add to Price
@@ -533,23 +533,23 @@ const DiscountManagement = () => {
   );
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="page">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-center mt-6">
+        <h1 className="page-title">
           Discount Management
         </h1>
       </div>
 
       {selectedDiscount ? (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           <button
             onClick={handleBackToTable}
-            className="mb-4 px-4 py-2 bg-gray-400 text-white rounded"
+            className="btn btn-secondary mb-4"
           >
             Back
           </button>
           <div className="bg-gray-100 p-6 rounded shadow-md">
-            <h2 className="text-3xl font-bold mb-6 text-center">
+            <h2 className="page-title">
               Discount Details
             </h2>
             <div className="grid grid-cols-2 gap-4">
@@ -626,14 +626,14 @@ const DiscountManagement = () => {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           <div className="mb-4">
             <div className="flex gap-4 items-center justify-between">
               <div className="flex gap-4 items-center flex-1">
                 {/* <select
                   value={searchField}
                   onChange={handleSearchFieldChange}
-                  className="px-4 py-2 border rounded w-48"
+                  className="select"
                 >
                   <option value="couponCode">Coupon Code</option>
                   <option value="name">Name</option>
@@ -648,7 +648,7 @@ const DiscountManagement = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 border rounded w-48"
+                  className="select"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -659,8 +659,7 @@ const DiscountManagement = () => {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setFormOpen(!formOpen)}
-                  className="px-4 py-2 text-white rounded flex items-center gap-2"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   <FaPlus />
                   {formOpen ? "Hide Form" : "Add Discount"}
@@ -671,28 +670,28 @@ const DiscountManagement = () => {
 
           {formOpen && (
             <div className="mb-6 bg-gray-100 p-6 rounded shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-center">
+              <h2 className="page-title">
                 Create Discount
               </h2>
               <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="name" className="font-medium text-gray-700">
+                <div className="field">
+                  <label htmlFor="name" className="field-label">
                     Discount Name
                   </label>
                   <input
                     id="name"
                     name="name"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Discount Name"
                     value={form.name}
                     onChange={handleChange}
                     autoComplete="off"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="usageLimit"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Usage Limit
                   </label>
@@ -701,16 +700,16 @@ const DiscountManagement = () => {
                     name="usageLimit"
                     type="number"
                     min="1"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Usage Limit"
                     value={form.usageLimit}
                     onChange={handleChange}
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="startDate"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Start Date
                   </label>
@@ -719,15 +718,15 @@ const DiscountManagement = () => {
                     name="startDate"
                     min={new Date().toISOString().split("T")[0]}
                     type="date"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     value={form.startDate}
                     onChange={handleChange}
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="endDate"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     End Date
                   </label>
@@ -736,22 +735,22 @@ const DiscountManagement = () => {
                     name="endDate"
                     min={new Date().toISOString().split("T")[0]}
                     type="date"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     value={form.endDate}
                     onChange={handleChange}
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="discountType"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Discount Type
                   </label>
                   <select
                     id="discountType"
                     name="discountType"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                     value={form.discountType}
                     onChange={handleChange}
                   >
@@ -760,10 +759,10 @@ const DiscountManagement = () => {
                     <option value="fixed">Fixed Amount</option>
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="discountValue"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Discount Value
                   </label>
@@ -773,7 +772,7 @@ const DiscountManagement = () => {
                     type="number"
                     min="0"
                     step="0.01"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Discount Value"
                     value={form.discountValue}
                     onChange={handleChange}
@@ -782,14 +781,14 @@ const DiscountManagement = () => {
                 <div className="col-span-2">
                   <label
                     htmlFor="applicablePlans"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Applicable Plans
                   </label>
                   <select
                     id="applicablePlans"
                     name="applicablePlans"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                     value={form.applicablePlans}
                     onChange={handleChange}
                   >
@@ -802,8 +801,7 @@ const DiscountManagement = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full px-4 py-2 text-white rounded font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "#439AB8" }}
+                    className="btn btn-primary w-full"
                   >
                     {loading ? "Creating..." : "Create Discount"}
                   </button>
@@ -822,41 +820,41 @@ const DiscountManagement = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+          <div className="table-wrap">
+            <table className="data-table">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Coupon Code
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Name
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Usage Limit
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Used
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Discount Type
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Discount Value
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Status
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Start Date
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     End Date
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Applicable Plans
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Actions
                   </th>
                 </tr>
@@ -864,7 +862,7 @@ const DiscountManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={9} className="empty-state">
                       Loading discounts...
                     </td>
                   </tr>
@@ -876,7 +874,7 @@ const DiscountManagement = () => {
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={9} className="empty-state">
                       No discounts found.
                     </td>
                   </tr>
@@ -892,19 +890,19 @@ const DiscountManagement = () => {
                       <td className="py-2 px-4 border-b border-gray-300 capitalize">
                         {discount.name}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.usageLimit}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.usedCount}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.discountType}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.discountValue}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                             discount.isActive === true
@@ -917,12 +915,12 @@ const DiscountManagement = () => {
                           {discount.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.startDate
                           ? new Date(discount.startDate).toLocaleDateString()
                           : "N/A"}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {discount.endDate
                           ? new Date(discount.endDate).toLocaleDateString()
                           : "N/A"}
@@ -930,7 +928,7 @@ const DiscountManagement = () => {
                       <td className="py-2 px-4 border-b border-gray-300 capitalize">
                         {discount.applicablePlans || "No plans specified"}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {/* relative dropdown-container */}
                         <div className="dropdown-container">
                           <button
@@ -974,24 +972,24 @@ const DiscountManagement = () => {
 
       {/* Edit Form Overlay */}
       {showEditForm && editingDiscount && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="modal-overlay">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Edit Discount</h3>
+            <h3 className="card-title">Edit Discount</h3>
             <form
               onSubmit={handleEditSubmit}
               className="grid grid-cols-2 gap-4"
             >
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editCouponCode"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Coupon Code
                 </label>
                 <input
                   id="editCouponCode"
                   name="couponCode"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Coupon Code"
                   value={editForm.couponCode}
                   onChange={(e) =>
@@ -1003,14 +1001,14 @@ const DiscountManagement = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor="editName" className="font-medium text-gray-700">
+              <div className="field">
+                <label htmlFor="editName" className="field-label">
                   Discount Name
                 </label>
                 <input
                   id="editName"
                   name="name"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Discount Name"
                   value={editForm.name}
                   onChange={(e) =>
@@ -1022,10 +1020,10 @@ const DiscountManagement = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editUsageLimit"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Usage Limit
                 </label>
@@ -1034,7 +1032,7 @@ const DiscountManagement = () => {
                   name="usageLimit"
                   type="number"
                   min="1"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Usage Limit"
                   value={editForm.usageLimit}
                   onChange={(e) =>
@@ -1045,10 +1043,10 @@ const DiscountManagement = () => {
                   }
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editStartDate"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Start Date
                 </label>
@@ -1056,7 +1054,7 @@ const DiscountManagement = () => {
                   id="editStartDate"
                   name="startDate"
                   type="date"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   value={editForm.startDate}
                   onChange={(e) =>
                     setEditForm({
@@ -1066,10 +1064,10 @@ const DiscountManagement = () => {
                   }
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editEndDate"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   End Date
                 </label>
@@ -1077,7 +1075,7 @@ const DiscountManagement = () => {
                   id="editEndDate"
                   name="endDate"
                   type="date"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   value={editForm.endDate}
                   onChange={(e) =>
                     setEditForm({
@@ -1087,17 +1085,17 @@ const DiscountManagement = () => {
                   }
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editDiscountType"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Discount Type
                 </label>
                 <select
                   id="editDiscountType"
                   name="discountType"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="select"
                   value={editForm.discountType}
                   onChange={(e) =>
                     setEditForm({
@@ -1111,10 +1109,10 @@ const DiscountManagement = () => {
                   <option value="fixed">Fixed Amount</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editDiscountValue"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Discount Value
                 </label>
@@ -1124,7 +1122,7 @@ const DiscountManagement = () => {
                   type="number"
                   min="0"
                   step="0.01"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Discount Value"
                   value={editForm.discountValue}
                   onChange={(e) =>
@@ -1138,14 +1136,14 @@ const DiscountManagement = () => {
               <div className="col-span-2">
                 <label
                   htmlFor="editApplicablePlans"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Applicable Plans
                 </label>
                 <select
                   id="editApplicablePlans"
                   name="applicablePlans"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="select"
                   value={editForm.applicablePlans}
                   onChange={(e) =>
                     setEditForm({
@@ -1171,12 +1169,11 @@ const DiscountManagement = () => {
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="px-4 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   {editLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="spinner"></div>
                       Updating...
                     </>
                   ) : (
@@ -1191,12 +1188,12 @@ const DiscountManagement = () => {
 
       {/* Delete Confirmation Overlay */}
       {showDeleteConfirmation && discountToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">
               Confirm Deletion
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="card-description mb-6">
               Are you sure you want to delete the discount{" "}
               <span className="font-semibold font-mono">
                 {discountToDelete.couponCode}
@@ -1207,7 +1204,7 @@ const DiscountManagement = () => {
               This action cannot be undone and will permanently remove the
               discount.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={handleCancelDelete}
                 disabled={deleteLoading}
@@ -1218,11 +1215,11 @@ const DiscountManagement = () => {
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                className="btn btn-danger"
               >
                 {deleteLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="spinner"></div>
                     Deleting...
                   </>
                 ) : (
@@ -1234,12 +1231,12 @@ const DiscountManagement = () => {
         </div>
       )}
       {showRemoveFromPrice && discountToRemove && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">
               Remove Discount from Price
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="card-description mb-6">
               Are you sure you want to remove discount{" "}
               <span className="font-semibold font-mono text-blue-600">
                 {discountToRemove.couponCode}
@@ -1253,7 +1250,7 @@ const DiscountManagement = () => {
               </span>
               ?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={() => {
                   setShowRemoveFromPrice(false);
@@ -1283,7 +1280,7 @@ const DiscountManagement = () => {
               >
                 {priceOperationLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="spinner"></div>
                     Removing...
                   </>
                 ) : (
@@ -1296,8 +1293,8 @@ const DiscountManagement = () => {
       )}
 
       {showAddToPrice && discountToAdd && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
                 Add Discount to Price
@@ -1340,13 +1337,13 @@ const DiscountManagement = () => {
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="addToPrice"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Select Price Plan <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="addToPrice"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="select"
                   value={selectedPrice}
                   onChange={(e) => setSelectedPrice(e.target.value)}
                 >
@@ -1382,13 +1379,13 @@ const DiscountManagement = () => {
                 <button
                   type="button"
                   disabled={!selectedPrice || priceOperationLoading}
-                  className="px-4 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
+                  
                   onClick={() => handleAddToPriceSubmit(selectedPrice)}
                 >
                   {priceOperationLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="spinner"></div>
                       Adding...
                     </>
                   ) : (

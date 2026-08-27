@@ -2,7 +2,6 @@ import { useState, useMemo, useContext } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
-import logo from "../../assets/logo.png";
 import companyname from "../../assets/companyname.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -76,16 +75,15 @@ function SetPassword() {
 
   const renderCardShell = (children) => (
     <>
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-md">
-          <div className="flex justify-center mb-6 gap-2">
-            <img src={logo} alt="Logo" className="h-10 w-10" />
-            <img src={companyname} alt="Company Name" className="h-10 w-60" />
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <img src={companyname} alt="ComeAway" className="h-9" />
           </div>
           {children}
         </div>
       </div>
-      <ToastContainer />
+      <ToastContainer position="top-right" theme="dark" />
     </>
   );
 
@@ -101,17 +99,16 @@ function SetPassword() {
 
     return renderCardShell(
       <>
-        <h2 className="text-2xl font-bold mb-4 text-white text-center">
-          Invitation Link Invalid
-        </h2>
-        <p className="text-gray-300 text-sm text-center mb-6">
+        <h1 className="auth-title">Invitation Link Invalid</h1>
+        <p className="auth-subtitle">
           {tokenRejected
             ? "This invitation link is invalid, has expired, or has already been used. Ask the person who invited you to send a new invitation."
             : messages[invite.reason]}
         </p>
         <Link
           to="/login"
-          className="block bg-white hover:bg-gray-200 text-black w-full font-bold py-2 px-4 rounded-full text-center"
+          className="auth-submit auth-form"
+          style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           Go to Login
         </Link>
@@ -121,28 +118,26 @@ function SetPassword() {
 
   return renderCardShell(
     <>
-      <h2 className="text-2xl font-bold mb-2 text-white text-center">
-        Set Your Password
-      </h2>
-      <p className="text-gray-300 text-sm text-center mb-6">
-        Choose a password to finish setting up your ComeAway team account
+      <h1 className="auth-title">Set Your Password</h1>
+      <p className="auth-subtitle">
+        Choose a password to finish setting up your team account
         {invite.email ? " for " : "."}
         {invite.email && (
-          <span className="text-white font-medium">{invite.email}</span>
+          <span style={{ color: "#ffffff", fontWeight: 600 }}>
+            {invite.email}
+          </span>
         )}
       </p>
-      <form onSubmit={handleSubmit}>
+
+      <form className="auth-form" onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label
-            className="block text-white text-sm font-bold mb-2"
-            htmlFor="password"
-          >
+          <label className="auth-label" htmlFor="password">
             New Password
           </label>
           <input
             type={showPassword ? "text" : "password"}
             id="password"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-black bg-white leading-tight focus:outline-none focus:shadow-outline"
+            className="auth-input"
             placeholder="At least 6 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -150,44 +145,35 @@ function SetPassword() {
           />
         </div>
         <div className="mb-3">
-          <label
-            className="block text-white text-sm font-bold mb-2"
-            htmlFor="confirm-password"
-          >
+          <label className="auth-label" htmlFor="confirm-password">
             Confirm Password
           </label>
           <input
             type={showPassword ? "text" : "password"}
             id="confirm-password"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-black bg-white leading-tight focus:outline-none focus:shadow-outline"
+            className="auth-input"
             placeholder="Re-enter your password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
           />
         </div>
-        <div className="mb-6">
-          <label className="flex items-center text-gray-300 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              className="mr-2"
-              checked={showPassword}
-              onChange={(e) => setShowPassword(e.target.checked)}
-            />
-            Show password
-          </label>
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-white hover:bg-gray-200 text-black w-full font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline disabled:opacity-60 disabled:cursor-not-allowed"
-        >
+        <label className="auth-checkbox mb-6">
+          <input
+            type="checkbox"
+            checked={showPassword}
+            onChange={(e) => setShowPassword(e.target.checked)}
+          />
+          Show password
+        </label>
+        <button type="submit" disabled={loading} className="auth-submit">
           {loading ? "Setting Password..." : "Set Password & Continue"}
         </button>
       </form>
-      <p className="text-gray-400 text-xs text-center mt-4">
+
+      <p className="auth-footnote">
         Already have an account?{" "}
-        <Link to="/login" className="text-white underline">
+        <Link to="/login" className="auth-link">
           Log in
         </Link>
       </p>

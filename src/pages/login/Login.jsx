@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import logo from '../../assets/logo.png';
 import companyname from '../../assets/companyname.png';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -36,52 +35,56 @@ function Login() {
 
   return (
     <>
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-md">
-          <div className="flex justify-center mb-6 gap-2">
-            <img src={logo} alt="Logo" className="h-10 w-10" />
-            <img src={companyname} alt="Company Name" className="h-10 w-60" />
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <img src={companyname} alt="ComeAway" className="h-9" />
           </div>
-          <h2 className="text-2xl font-bold mb-6 text-white text-center">Login</h2>
-          <form onSubmit={handleSignIn}>
+          <h1 className="auth-title">Admin Sign In</h1>
+          <p className="auth-subtitle">
+            Sign in with your ComeAway team account to continue.
+          </p>
+
+          <form className="auth-form" onSubmit={handleSignIn}>
             <div className="mb-4">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="email">
+              <label className="auth-label" htmlFor="email">
                 Email
               </label>
               <input
                 type="email"
                 id="email"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-black bg-white leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Email"
+                className="auth-input"
+                placeholder="you@comeaway.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
             <div className="mb-6">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="password">
+              <label className="auth-label" htmlFor="password">
                 Password
               </label>
               <input
                 type="password"
                 id="password"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-black bg-white mb-3 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="Password"
+                className="auth-input"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                className="bg-white hover:bg-gray-200 text-black w-full font-bold py-2 px-4 rounded-full focus:outline-none focus:shadow-outline"
-              >
-                Sign In
-              </button>
-            </div>
+            <button type="submit" className="auth-submit">
+              Sign In
+            </button>
           </form>
+
+          <p className="auth-footnote">
+            Access is limited to Owner, Admin and Content Manager accounts.
+          </p>
         </div>
       </div>
-      <ToastContainer />
+      <ToastContainer position="top-right" theme="dark" />
     </>
   );
 }

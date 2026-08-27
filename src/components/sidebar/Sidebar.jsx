@@ -1,118 +1,93 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { CgList } from "react-icons/cg";
-import { FaUser, FaUsers, FaBars, FaTimes } from "react-icons/fa";
+import { FaUser, FaUsers, FaBars, FaTimes, FaTicketAlt } from "react-icons/fa";
 import { IoSettings } from "react-icons/io5";
 import { LuLayoutDashboard } from "react-icons/lu";
-import { MdLogout } from "react-icons/md";
 import { TbMusicCog } from "react-icons/tb";
 import { AuthContext } from "../../context/authContext";
-import {
-  MENU_ITEMS,
-  isMenuItemAllowed,
-  getDefaultSection,
-} from "./menuConfig";
+import { getNavGroups, loadSection } from "./menuConfig";
+
+const SECTION_ICONS = {
+  Dashboard: LuLayoutDashboard,
+  Categories: CgList,
+  SoundManagement: TbMusicCog,
+  UserManagement: FaUser,
+  EntitlementManagement: FaTicketAlt,
+  TeamManagement: FaUsers,
+  Settings: IoSettings,
+};
+
+const COLLAPSE_KEY = "comeaway:sidebar-collapsed";
 
 function Sidebar({ onMenuItemClick }) {
-  const { logout, role } = useContext(AuthContext);
-  const [isOpen, setIsOpen] = useState(false);
-  // Keep the highlight in step with the section Home opens by default.
-  const [activeTab, setActiveTab] = useState(() => getDefaultSection(role));
+  const { role } = useContext(AuthContext);
+  // Remember the rail preference between sessions.
+  const [isCollapsed, setIsCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSE_KEY) === "true"
+  );
+  // Keep the highlight in step with the section Home opens.
+  const [activeTab, setActiveTab] = useState(() => loadSection(role));
 
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_KEY, String(isCollapsed));
+  }, [isCollapsed]);
 
   const handleMenuItemClick = (tab) => {
     setActiveTab(tab);
     onMenuItemClick(tab);
   };
 
-  const handleLogout = () => {
-    // console.log("Logout button clicked");
-    logout();
-  };
+  const navGroups = getNavGroups(role);
 
   return (
-    <div
-      className={`flex flex-col min-h-screen ${
-        isOpen ? "w-64" : "w-20"
-      } bg-gray-800 text-white shadow-lg transition-all duration-300`}
-    >
-      <div className="flex items-center justify-between w-full px-4 py-4">
-        {!isOpen && (
-          <button onClick={handleToggle} className="text-white text-lg mx-auto">
-            <FaBars />
-          </button>
-        )}
-        {isOpen && (
-          <button onClick={handleToggle} className="text-white text-lg ml-auto">
-            <FaTimes />
-          </button>
-        )}
-      </div>
-      <nav className="mt-10 w-full">
-        <ul>
-          {[
-            { name: "Dashboard", icon: <LuLayoutDashboard size={20} /> },
-            { name: "Categories", icon: <CgList size={20} /> },
-            { name: "SoundManagement", icon: <TbMusicCog size={20} /> },
-            { name: "UserManagement", icon: <FaUser size={20} /> },
-            // { name: "DiscountManagement", icon: <FaMoneyBillTrendUp size={20} /> },
-            // { name: "PriceManagement", icon: <FaMoneyBill size={20} /> },
-            // { name: "ActivationCodes", icon: <CgList size={20} /> }, // New tab for Activation Codes
-            { name: "EntitlementManagement", icon: <CgList size={20} /> }, // New tab for Entitlement Management
-            { name: "TeamManagement", icon: <FaUsers size={20} /> }, // Owner/Admin only
-            { name: "Settings", icon: <IoSettings size={20} /> },
-          ].filter((item) => isMenuItemAllowed(item.name, role)).map((item) => (
-            <li key={item.name} className="mt-5">
-              <button
-                onClick={() => handleMenuItemClick(item.name)}
-                className={`flex items-center px-1 py-2 text-gray-300 cursor-pointer rounded w-full text-left transition-all duration-300 ${
-                  isOpen ? "justify-start" : "justify-center"
-                } ${
-                  activeTab === item.name
-                    ? "bg-white text-black"
-                    : "hover:bg-[#5AD4FF]"
-                } ${isOpen ? "border-b" : "border-none"}`}
-              >
-                <div
-                  className={`${isOpen ? "mr-3" : ""} ${
-                    activeTab === item.name ? "text-black" : "text-white"
-                  }`}
+    <aside className={`app-sidebar ${isCollapsed ? "is-collapsed" : ""}`}>
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={() => setIsCollapsed((prev) => !prev)}
+        title={isCollapsed ? "Expand menu" : "Collapse menu"}
+        aria-label={isCollapsed ? "Expand menu" : "Collapse menu"}
+      >
+        {isCollapsed ? <FaBars size={15} /> : <FaTimes size={15} />}
+      </button>
+
+      <nav className="sidebar-nav">
+        {navGroups.map((group, groupIndex) => (
+          <div key={group.group}>
+            {isCollapsed ? (
+              // A rule reads cleaner than a truncated heading on the rail.
+              groupIndex > 0 && <div className="sidebar-group-divider" />
+            ) : (
+              <p className="sidebar-group-label">{group.group}</p>
+            )}
+            {group.items.map((item) => {
+              const Icon = SECTION_ICONS[item.name] || CgList;
+              const isActive = activeTab === item.name;
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => handleMenuItemClick(item.name)}
+                  className={`nav-item ${isActive ? "is-active" : ""}`}
+                  aria-current={isActive ? "page" : undefined}
                 >
-                  {item.icon}
-                </div>
-                {isOpen && (
-                  <span
-                    className={`${
-                      activeTab === item.name ? "text-black" : "text-white"
-                    }`}
-                  >
-                    {MENU_ITEMS[item.name]?.label || item.name}
+                  <span className="nav-item-icon">
+                    <Icon size={17} />
                   </span>
-                )}
-              </button>
-            </li>
-          ))}
-          <li className="mt-5">
-            <button
-              onClick={handleLogout}
-              className={`flex items-center px-1 py-2 text-gray-300  hover:bg-[#5AD4FF] text-black cursor-pointer rounded w-full text-left transition-all duration-300 ${
-                isOpen
-                  ? "justify-start text-black"
-                  : "justify-center hover:bg-[#5AD4FF]"
-              } hover:bg-[#5AD4FF] ${isOpen ? "border-b" : "border-none"}`}
-            >
-              <div className={`${isOpen ? "mr-3" : ""} text-white`}>
-                <MdLogout size={20} />
-              </div>
-              {isOpen && <span className="text-white">Logout</span>}
-            </button>
-          </li>
-        </ul>
+                  {!isCollapsed && (
+                    <span className="nav-item-label">{item.label}</span>
+                  )}
+                  {isCollapsed && (
+                    <span className="nav-tooltip">{item.label}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
-    </div>
+    </aside>
   );
 }
 

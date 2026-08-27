@@ -74,7 +74,7 @@ const ActivationCodeManagement = () => {
 
     return createPortal(
       <div
-        className="fixed w-48 bg-white rounded-lg shadow-xl z-[9999] border border-gray-200 overflow-hidden portal-dropdown"
+        className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden portal-dropdown"
         style={{
           left: position.x,
           top: position.y,
@@ -82,7 +82,7 @@ const ActivationCodeManagement = () => {
         onClick={handleDropdownClick}
       >
         {/* Dropdown header */}
-        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="dropdown-header">
           <p className="text-xs font-medium text-gray-600">
             Actions for {code.code}
           </p>
@@ -117,7 +117,7 @@ const ActivationCodeManagement = () => {
               handleViewCode(code);
               onClose();
             }}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+            className="dropdown-item"
           >
             <FaEye className="mr-3 h-4 w-4 text-gray-500" />
             View Details
@@ -669,23 +669,23 @@ const ActivationCodeManagement = () => {
   );
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="page">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold text-center mt-6">
+        <h1 className="page-title">
           Activation Code Management
         </h1>
       </div>
 
       {selectedCode ? (
-        <div className="container mx-auto p-4 bg-white rounded shadow-md">
+        <div className="card is-padded">
           <button
             onClick={handleBackToTable}
-            className="mb-4 px-4 py-2 bg-gray-400 text-white rounded"
+            className="btn btn-secondary mb-4"
           >
             Back
           </button>
           <div className="bg-gray-100 p-6 rounded shadow-md">
-            <h2 className="text-3xl font-bold mb-6 text-center">
+            <h2 className="page-title">
               Activation Code Details
             </h2>
             <div className="grid grid-cols-2 gap-4">
@@ -747,7 +747,7 @@ const ActivationCodeManagement = () => {
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => handleRedeemCode(selectedCode)}
-                    className="px-6 py-3 rounded-lg font-semibold text-white flex items-center gap-2 mx-auto bg-green-600 hover:bg-green-700"
+                    className="btn btn-primary mx-auto"
                   >
                     <FaCheck />
                     Redeem Code
@@ -764,7 +764,7 @@ const ActivationCodeManagement = () => {
                 <select
                   value={searchField}
                   onChange={handleSearchFieldChange}
-                  className="px-4 py-2 border rounded w-48"
+                  className="select"
                 >
                   <option value="code">Code</option>
                   <option value="productName">Product Name</option>
@@ -782,7 +782,7 @@ const ActivationCodeManagement = () => {
                 <select
                   value={redeemStatusFilter}
                   onChange={(e) => setRedeemStatusFilter(e.target.value)}
-                  className="px-4 py-2 border rounded w-48"
+                  className="select"
                 >
                   <option value="">All Status</option>
                   <option value="true">Redeemed</option>
@@ -791,7 +791,7 @@ const ActivationCodeManagement = () => {
                 <select
                   value={platformFilter}
                   onChange={(e) => setPlatformFilter(e.target.value)}
-                  className="px-4 py-2 border rounded w-48"
+                  className="select"
                 >
                   <option value="">All Platforms</option>
                   <option value="Shopify">Shopify</option>
@@ -800,8 +800,7 @@ const ActivationCodeManagement = () => {
               </div>
               <div className="flex space-x-2">
                 <label
-                  className="px-4 py-2 text-white rounded flex items-center gap-2 cursor-pointer"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   <FaUpload />
                   {importLoading ? "Importing..." : "Import CSV"}
@@ -815,16 +814,14 @@ const ActivationCodeManagement = () => {
                 <button
                   onClick={handleExportData}
                   disabled={exportLoading}
-                  className="px-4 py-2 text-white rounded flex items-center gap-2 disabled:opacity-60"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   <FaDownload />
                   {exportLoading ? "Exporting..." : "Export CSV"}
                 </button>
                 <button
                   onClick={() => setFormOpen(!formOpen)}
-                  className="px-4 py-2 text-white rounded flex items-center gap-2"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   <FaPlus />
                   {formOpen ? "Hide Form" : "Add Code"}
@@ -835,72 +832,72 @@ const ActivationCodeManagement = () => {
 
           {formOpen && (
             <div className="mb-6 bg-gray-100 p-6 rounded shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-center">
+              <h2 className="page-title">
                 Create Activation Code
               </h2>
               <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="productName"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Product Name
                   </label>
                   <input
                     id="productName"
                     name="productName"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Product Name"
                     value={form.productName}
                     onChange={handleChange}
                     autoComplete="off"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="orderNumber"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Order Number
                   </label>
                   <input
                     id="orderNumber"
                     name="orderNumber"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Order Number"
                     value={form.orderNumber}
                     onChange={handleChange}
                     autoComplete="off"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="customerName"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Customer Name
                   </label>
                   <input
                     id="customerName"
                     name="customerName"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Customer Name"
                     value={form.customerName}
                     onChange={handleChange}
                     autoComplete="off"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="customerEmail"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Customer Email
                   </label>
                   <input
                     id="customerEmail"
                     name="customerEmail"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     placeholder="Customer Email"
                     value={form.customerEmail}
                     onChange={handleChange}
@@ -908,17 +905,17 @@ const ActivationCodeManagement = () => {
                     type="email"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="platform"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Platform
                   </label>
                   <select
                     id="platform"
                     name="platform"
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="select"
                     value={form.platform}
                     onChange={handleChange}
                   >
@@ -927,10 +924,10 @@ const ActivationCodeManagement = () => {
                     <option value="Amazon">Amazon</option>
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="field">
                   <label
                     htmlFor="expiresIn"
-                    className="font-medium text-gray-700"
+                    className="field-label"
                   >
                     Expiry Date
                   </label>
@@ -939,7 +936,7 @@ const ActivationCodeManagement = () => {
                     name="expiresIn"
                     type="date"
                     min={new Date().toISOString().split("T")[0]}
-                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="input"
                     value={form.expiresIn}
                     onChange={handleChange}
                   />
@@ -948,8 +945,7 @@ const ActivationCodeManagement = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full px-4 py-2 text-white rounded font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: "#439AB8" }}
+                    className="btn btn-primary w-full"
                   >
                     {loading ? "Creating..." : "Create Code"}
                   </button>
@@ -968,38 +964,38 @@ const ActivationCodeManagement = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300 rounded-lg">
+          <div className="table-wrap">
+            <table className="data-table">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Code
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Product Name
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Order Number
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Customer Name
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Customer Email
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Platform
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Expiry Date
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Redeemed
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Access Code Sent
                   </th>
-                  <th className="py-2 px-4 border-b border-gray-300 text-left bg-gray-100">
+                  <th>
                     Actions
                   </th>
                 </tr>
@@ -1007,7 +1003,7 @@ const ActivationCodeManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={9} className="empty-state">
                       Loading codes...
                     </td>
                   </tr>
@@ -1019,7 +1015,7 @@ const ActivationCodeManagement = () => {
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={9} className="empty-state">
                       No activation codes found.
                     </td>
                   </tr>
@@ -1029,27 +1025,27 @@ const ActivationCodeManagement = () => {
                       <td className="py-2 px-4 border-b border-gray-300 font-mono font-semibold text-blue-700">
                         {code.code}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.productName}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.orderNumber}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.customerName}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.customerEmail}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.platform}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {code.expiresIn
                           ? new Date(code.expiresIn).toLocaleDateString()
                           : "N/A"}
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                             code.redeemed
@@ -1060,7 +1056,7 @@ const ActivationCodeManagement = () => {
                           {code.redeemed ? "Yes" : "No"}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                             code.accessCodeSentAt
@@ -1071,7 +1067,7 @@ const ActivationCodeManagement = () => {
                           {code.accessCodeSentAt ? "Yes" : "No"}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-b border-gray-300">
+                      <td>
                         {/* relative dropdown-container */}
                         <div className="dropdown-container">
                           <button
@@ -1115,24 +1111,24 @@ const ActivationCodeManagement = () => {
 
       {/* Edit Form Overlay */}
       {showEditForm && editingCode && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="modal-overlay">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Edit Activation Code</h3>
+            <h3 className="card-title">Edit Activation Code</h3>
             <form
               onSubmit={handleEditSubmit}
               className="grid grid-cols-2 gap-4"
             >
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editProductName"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Product Name
                 </label>
                 <input
                   id="editProductName"
                   name="productName"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Product Name"
                   value={editForm.productName}
                   onChange={(e) =>
@@ -1144,17 +1140,17 @@ const ActivationCodeManagement = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editOrderNumber"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Order Number
                 </label>
                 <input
                   id="editOrderNumber"
                   name="orderNumber"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Order Number"
                   value={editForm.orderNumber}
                   onChange={(e) =>
@@ -1166,17 +1162,17 @@ const ActivationCodeManagement = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editCustomerName"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Customer Name
                 </label>
                 <input
                   id="editCustomerName"
                   name="customerName"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Customer Name"
                   value={editForm.customerName}
                   onChange={(e) =>
@@ -1188,17 +1184,17 @@ const ActivationCodeManagement = () => {
                   autoComplete="off"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editCustomerEmail"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Customer Email
                 </label>
                 <input
                   id="editCustomerEmail"
                   name="customerEmail"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   placeholder="Customer Email"
                   value={editForm.customerEmail}
                   onChange={(e) =>
@@ -1211,17 +1207,17 @@ const ActivationCodeManagement = () => {
                   type="email"
                 />
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editPlatform"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Platform
                 </label>
                 <select
                   id="editPlatform"
                   name="platform"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="select"
                   value={editForm.platform}
                   onChange={(e) =>
                     setEditForm({
@@ -1235,10 +1231,10 @@ const ActivationCodeManagement = () => {
                   <option value="Amazon">Amazon</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="field">
                 <label
                   htmlFor="editExpiresIn"
-                  className="font-medium text-gray-700"
+                  className="field-label"
                 >
                   Expiry Date
                 </label>
@@ -1246,7 +1242,7 @@ const ActivationCodeManagement = () => {
                   id="editExpiresIn"
                   name="expiresIn"
                   type="date"
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="input"
                   value={editForm.expiresIn}
                   onChange={(e) =>
                     setEditForm({
@@ -1268,12 +1264,11 @@ const ActivationCodeManagement = () => {
                 <button
                   type="submit"
                   disabled={editLoading}
-                  className="px-4 py-2 text-white rounded hover:opacity-80 disabled:opacity-50 flex items-center gap-2"
-                  style={{ backgroundColor: "#439AB8" }}
+                  className="btn btn-primary"
                 >
                   {editLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="spinner"></div>
                       Updating...
                     </>
                   ) : (
@@ -1288,12 +1283,12 @@ const ActivationCodeManagement = () => {
 
       {/* Delete Confirmation Overlay */}
       {showDeleteConfirmation && codeToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">
               Confirm Deletion
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="card-description mb-6">
               Are you sure you want to delete the activation code{" "}
               <span className="font-semibold font-mono">
                 {codeToDelete.code}
@@ -1304,7 +1299,7 @@ const ActivationCodeManagement = () => {
               This action cannot be undone and will permanently remove the
               activation code.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={handleCancelDelete}
                 disabled={deleteLoading}
@@ -1315,11 +1310,11 @@ const ActivationCodeManagement = () => {
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                className="btn btn-danger"
               >
                 {deleteLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="spinner"></div>
                     Deleting...
                   </>
                 ) : (
@@ -1333,15 +1328,15 @@ const ActivationCodeManagement = () => {
 
       {/* Email Confirmation Overlay */}
       {showEmailConfirmation && emailToSend && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Email Send</h3>
-            <p className="text-gray-600 mb-6">
+        <div className="modal-overlay">
+          <div className="modal is-padded">
+            <h3 className="card-title">Confirm Email Send</h3>
+            <p className="card-description mb-6">
               Are you sure you want to send an email to{" "}
               <span className="font-semibold">{emailToSend.customerEmail}</span>
               ?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="modal-footer">
               <button
                 onClick={handleCancelSendEmail}
                 disabled={emailLoading}
@@ -1352,12 +1347,11 @@ const ActivationCodeManagement = () => {
               <button
                 onClick={handleConfirmSendEmail}
                 disabled={emailLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                style={{ backgroundColor: "#439AB8" }}
+                className="btn btn-primary"
               >
                 {emailLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="spinner"></div>
                     Sending...
                   </>
                 ) : (
