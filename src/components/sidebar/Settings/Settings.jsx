@@ -1,4 +1,5 @@
 import { useState, useEffect, useContext } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthContext, ROLE_LABELS } from "../../../context/authContext";
@@ -10,6 +11,7 @@ const Settings = () => {
   const [profile, setProfile] = useState({});
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (user && user._id) {
@@ -144,15 +146,26 @@ const Settings = () => {
               <label className="field-label" htmlFor="new-password">
                 New Password
               </label>
-              <input
-                id="new-password"
-                type="password"
-                placeholder="Leave blank to keep your current password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                autoComplete="new-password"
-              />
+              <div className="password-field">
+                <input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Leave blank to keep your current password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+                </button>
+              </div>
             </div>
           </div>
 
