@@ -1022,3 +1022,34 @@ body {
 .pagination li a:hover { background-color: var(--surface-sunken); color: var(--text); }
 .pagination li.selected a { background-color: var(--brand-600); color: var(--text-inverse); }
 .pagination li.disabled a { opacity: 0.4; cursor: not-allowed; }
+
+/* ------------------------------------------------- password visibility - */
+
+.password-field { position: relative; }
+
+/* Leave room for the toggle so long values never slide under it. */
+.password-field .input,
+.password-field .auth-input { padding-right: 42px; }
+
+.password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background-color: transparent;
+  cursor: pointer;
+  transition: color var(--transition), background-color var(--transition);
+}
+
+.password-toggle:hover { color: var(--text-secondary); background-color: var(--surface-sunken); }
+
+/* Dark auth cards need the inverse treatment. */
+.password-toggle-dark { color: #6d8298; }
+.password-toggle-dark:hover { color: var(--text-inverse); background-color: rgba(255, 255, 255, 0.08); }

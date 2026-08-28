@@ -1,6 +1,7 @@
 import { useState, useMemo, useContext } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 import companyname from "../../assets/companyname.png";
 import { ToastContainer, toast } from "react-toastify";
@@ -134,38 +135,52 @@ function SetPassword() {
           <label className="auth-label" htmlFor="password">
             New Password
           </label>
-          <input
-            type={showPassword ? "text" : "password"}
-            id="password"
-            className="auth-input"
-            placeholder="At least 6 characters"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-          />
+              <div className="password-field">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  className="auth-input"
+                  placeholder="At least 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle password-toggle-dark"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+                </button>
+              </div>
         </div>
-        <div className="mb-3">
+        <div className="mb-6">
           <label className="auth-label" htmlFor="confirm-password">
             Confirm Password
           </label>
-          <input
-            type={showPassword ? "text" : "password"}
-            id="confirm-password"
-            className="auth-input"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete="new-password"
-          />
+              <div className="password-field">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="confirm-password"
+                  className="auth-input"
+                  placeholder="Re-enter your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle password-toggle-dark"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+                </button>
+              </div>
         </div>
-        <label className="auth-checkbox mb-6">
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={(e) => setShowPassword(e.target.checked)}
-          />
-          Show password
-        </label>
         <button type="submit" disabled={loading} className="auth-submit">
           {loading ? "Setting Password..." : "Set Password & Continue"}
         </button>
