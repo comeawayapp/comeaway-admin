@@ -67,7 +67,23 @@ const EntitlementManagement = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [entitlementToDelete, setEntitlementToDelete] = useState(null);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const itemsPerPage = 20;
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleString();
+  };
+
+  const formatDateOnly = (value) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString();
+  };
 
   // Helper function to format platform for display
   const formatPlatformDisplay = (platform) => {
@@ -233,14 +249,24 @@ const EntitlementManagement = () => {
       return () => clearTimeout(timeoutId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, searchValue, redeemStatusFilter, platformFilter]);
+  }, [
+    accessToken,
+    searchValue,
+    redeemStatusFilter,
+    platformFilter,
+    sortBy,
+    sortOrder,
+  ]);
 
   const fetchEntitlements = useCallback(async () => {
     setFetching(true);
     setFetchError("");
 
     try {
-      const queryParams = {};
+      const queryParams = {
+        sortBy,
+        sortOrder,
+      };
 
       if (searchValue.trim()) {
         queryParams[searchField] = searchValue.trim();
@@ -255,7 +281,8 @@ const EntitlementManagement = () => {
       }
 
       const data = await getEntitlements(accessToken, queryParams);
-      setEntitlements(data);
+      setEntitlements(Array.isArray(data) ? data : []);
+      setCurrentPage(0);
     } catch (err) {
       setFetchError(err.message);
       toast.error("Error fetching entitlements");
@@ -268,7 +295,27 @@ const EntitlementManagement = () => {
     searchField,
     redeemStatusFilter,
     platformFilter,
+    sortBy,
+    sortOrder,
   ]);
+
+  const handleSort = useCallback(
+    (field) => {
+      if (field !== "createdAt" && field !== "expiryDate") return;
+      if (sortBy === field) {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+        return;
+      }
+      setSortBy(field);
+      setSortOrder("desc");
+    },
+    [sortBy]
+  );
+
+  const sortIndicator = (field) => {
+    if (sortBy !== field) return "";
+    return sortOrder === "asc" ? " ▲" : " ▼";
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -538,10 +585,11 @@ const EntitlementManagement = () => {
     setExportLoading(true);
     try {
       const csvContent = [
-        "Entitlement ID,Product Name,Order Number,Customer Name,Customer Email,Assigned To,Platform,Expiry Date,Redeemed",
+        "Entitlement ID,Created At,Product Name,Order Number,Customer Name,Customer Email,Assigned To,Platform,Expiry Date,Redeemed",
         ...entitlements.map((entitlement) =>
           [
             entitlement.entitlementId || entitlement.code,
+            `"${formatDateTime(entitlement.createdAt)}"`,
             `"${entitlement.productName}"`,
             entitlement.orderNumber,
             `"${entitlement.customerName || ""}"`,
@@ -549,7 +597,7 @@ const EntitlementManagement = () => {
             entitlement.assignedTo || entitlement.customerEmail,
             `"${formatPlatformDisplay(entitlement.platform)}"`,
             entitlement.expiryDate
-              ? new Date(entitlement.expiryDate).toLocaleDateString()
+              ? formatDateOnly(entitlement.expiryDate)
               : "N/A",
             entitlement.redeemed ? "Yes" : "No",
           ].join(",")
@@ -725,6 +773,12 @@ const EntitlementManagement = () => {
               </div>
               <div className="mb-4">
                 <p className="text-lg">
+                  <strong>Created At:</strong>{" "}
+                  {formatDateTime(selectedEntitlement.createdAt)}
+                </p>
+              </div>
+              <div className="mb-4">
+                <p className="text-lg">
                   <strong>Product Name:</strong>{" "}
                   {selectedEntitlement.productName}
                 </p>
@@ -763,11 +817,7 @@ const EntitlementManagement = () => {
               <div className="mb-4">
                 <p className="text-lg">
                   <strong>Expiry Date:</strong>{" "}
-                  {selectedEntitlement.expiryDate
-                    ? new Date(
-                        selectedEntitlement.expiryDate
-                      ).toLocaleDateString()
-                    : "N/A"}
+                  {formatDateOnly(selectedEntitlement.expiryDate)}
                 </p>
               </div>
               <div className="mb-4">
@@ -1044,6 +1094,16 @@ const EntitlementManagement = () => {
                     Entitlement ID
                   </th>
                   <th>
+                    <button
+                      type="button"
+                      onClick={() => handleSort("createdAt")}
+                      className="font-semibold hover:text-blue-700"
+                      title="Sort by created date"
+                    >
+                      Created At{sortIndicator("createdAt")}
+                    </button>
+                  </th>
+                  <th>
                     Product Name
                   </th>
                   <th>
@@ -1062,7 +1122,14 @@ const EntitlementManagement = () => {
                     Platform
                   </th>
                   <th>
-                    Expiry Date
+                    <button
+                      type="button"
+                      onClick={() => handleSort("expiryDate")}
+                      className="font-semibold hover:text-blue-700"
+                      title="Sort by expiry date"
+                    >
+                      Expiry Date{sortIndicator("expiryDate")}
+                    </button>
                   </th>
                   <th>
                     Redeemed
@@ -1078,19 +1145,19 @@ const EntitlementManagement = () => {
               <tbody>
                 {fetching ? (
                   <tr>
-                    <td colSpan={11} className="empty-state">
+                    <td colSpan={12} className="empty-state">
                       Loading entitlements...
                     </td>
                   </tr>
                 ) : fetchError ? (
                   <tr>
-                    <td colSpan={11} className="text-center py-4 text-red-500">
+                    <td colSpan={12} className="text-center py-4 text-red-500">
                       {fetchError}
                     </td>
                   </tr>
                 ) : currentPageData.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="empty-state">
+                    <td colSpan={12} className="empty-state">
                       No entitlements found.
                     </td>
                   </tr>
@@ -1102,6 +1169,9 @@ const EntitlementManagement = () => {
                     >
                       <td className="py-2 px-4 border-b border-gray-300 font-mono font-semibold text-blue-700">
                         {entitlement.entitlementId || entitlement.code}
+                      </td>
+                      <td>
+                        {formatDateTime(entitlement.createdAt)}
                       </td>
                       <td>
                         {entitlement.productName}
@@ -1122,11 +1192,7 @@ const EntitlementManagement = () => {
                         {formatPlatformDisplay(entitlement.platform)}
                       </td>
                       <td>
-                        {entitlement.expiryDate
-                          ? new Date(
-                              entitlement.expiryDate
-                            ).toLocaleDateString()
-                          : "N/A"}
+                        {formatDateOnly(entitlement.expiryDate)}
                       </td>
                       <td>
                         <span
