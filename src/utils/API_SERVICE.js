@@ -373,6 +373,30 @@ export const getCategories = async (accessToken) => {
     throw error;
   }
 };
+
+export const getNarrators = async (accessToken) => {
+  const axiosInstance = createAxiosInstance(accessToken);
+  const endpoint = "/narrators/all";
+
+  try {
+    const response = await axiosInstance.get(endpoint);
+    return Array.isArray(response.data) ? response.data : response.data?.narrators || [];
+  } catch (error) {
+    console.error("Error fetching narrators:", {
+      message: error.message,
+      config: error.config,
+      response: error.response
+        ? {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers,
+          }
+        : null,
+    });
+    throw error;
+  }
+};
+
 export const getCategoryById = async (id, accessToken) => {
   const axiosInstance = createAxiosInstance(accessToken);
   const endpoint = `/categories/getCatagory/${id}`;
@@ -472,12 +496,12 @@ export const createSound = async (formData, accessToken) => {
     throw error;
   }
 };
-export const getSounds = async (accessToken) => {
+export const getSounds = async (accessToken, query = {}) => {
   const axiosInstance = createAxiosInstance(accessToken);
   const endpoint = "/sounds/getSounds";
 
   try {
-    const response = await axiosInstance.get(endpoint);
+    const response = await axiosInstance.get(endpoint, { params: query });
     return response.data;
   } catch (error) {
     console.error("Error fetching sounds:", {

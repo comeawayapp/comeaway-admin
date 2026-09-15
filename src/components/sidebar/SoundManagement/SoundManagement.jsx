@@ -15,6 +15,7 @@ import AddOrUpdateSound from "./component/AddUpdateForm";
 import {
   deleteSound,
   getCategories,
+  getNarrators,
   getSounds,
 } from "../../../utils/API_SERVICE";
 import { AuthContext } from "../../../context/authContext";
@@ -26,11 +27,14 @@ export default function SoundManagement() {
   const [selectedSound, setSelectedSound] = useState(null);
   const [sounds, setSounds] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [narrators, setNarrators] = useState([]);
   const [searchFilters, setSearchFilters] = useState({
     serial: "",
     title: "",
     category: "",
     status: "",
+    narrator: "",
+    author: "",
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -44,11 +48,10 @@ export default function SoundManagement() {
   useEffect(() => {
     async function fetchSounds() {
       try {
-        const soundsData = await getSounds(accessToken);
-        // const reversedSounds = soundsDat;
-        setSounds(soundsData);
-        setFilteredSounds(soundsData);
-        // console.log(reversedSounds);
+        const query = {};
+        if (searchFilters.narrator) query.narrator = searchFilters.narrator;
+        const soundsData = await getSounds(accessToken, query);
+        setSounds(Array.isArray(soundsData) ? soundsData : []);
       } catch (error) {
         toast.error("Error fetching sounds");
       }
@@ -63,9 +66,23 @@ export default function SoundManagement() {
       }
     }
 
-    fetchSounds();
-    fetchCategories();
-  }, [accessToken, currentView]);
+    async function fetchNarrators() {
+      try {
+        const narratorsData = await getNarrators(accessToken);
+        setNarrators(Array.isArray(narratorsData) ? narratorsData : []);
+      } catch (error) {
+        // Empty narrator list is fine (API may 404 when none exist)
+        setNarrators([]);
+      }
+    }
+
+    if (accessToken && currentView === "main") {
+      fetchSounds();
+      fetchCategories();
+      fetchNarrators();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, currentView, searchFilters.narrator]);
   // console.log(categories, "categories");
 
   useEffect(() => {
@@ -80,7 +97,14 @@ export default function SoundManagement() {
     };
   }, []);
 
-  // Filter sounds based on search term
+  const getNarratorName = (narrator) => {
+    if (!narrator) return "—";
+    if (typeof narrator === "object") return narrator.name || "—";
+    const found = narrators.find((n) => String(n._id) === String(narrator));
+    return found?.name || "—";
+  };
+
+  // Filter sounds based on search term (client-side for serial/title/category/status/author)
   useEffect(() => {
     const filtered =
       Array.isArray(sounds) &&
@@ -99,11 +123,14 @@ export default function SoundManagement() {
             .includes(searchFilters.category.toLowerCase()) &&
           sound.status
             .toLowerCase()
-            .includes(searchFilters.status.toLowerCase())
+            .includes(searchFilters.status.toLowerCase()) &&
+          (sound.author || "")
+            .toLowerCase()
+            .includes(searchFilters.author.toLowerCase())
       );
-    setFilteredSounds(filtered);
+    setFilteredSounds(filtered || []);
     setCurrentPage(1); // Reset to first page on filter change
-  }, [searchFilters, selectedCategoryFilter, sounds]);
+  }, [searchFilters, selectedCategoryFilter, sounds, categories]);
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
@@ -130,10 +157,10 @@ export default function SoundManagement() {
       // If no sound data is passed, refetch the sounds list
       if (!newSound) {
         // console.log("No sound data provided, refetching sounds list...");
-        const soundsData = await getSounds(accessToken);
-        // const reversedSounds = soundsData.reverse();
-        setSounds(soundsData);
-        setFilteredSounds(soundsData);
+        const query = {};
+        if (searchFilters.narrator) query.narrator = searchFilters.narrator;
+        const soundsData = await getSounds(accessToken, query);
+        setSounds(Array.isArray(soundsData) ? soundsData : []);
       } else {
         // Handle the case where sound data is passed (legacy behavior)
         if (selectedSound) {
@@ -249,7 +276,7 @@ export default function SoundManagement() {
             </div>
           </div>
           <div className="card-body">
-            <div className="relative mb-6 grid grid-cols-4 gap-4 min-w-full">
+            <div className="relative mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 min-w-full">
               <div className="relative">
                 <Search className="input-icon" />
                 <input
@@ -310,6 +337,40 @@ export default function SoundManagement() {
                   }
                 />
               </div>
+              <div className="relative">
+                <select
+                  className="select"
+                  value={searchFilters.narrator}
+                  onChange={(e) =>
+                    setSearchFilters({
+                      ...searchFilters,
+                      narrator: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">All Narrators</option>
+                  {narrators.map((narrator) => (
+                    <option key={narrator._id} value={narrator._id}>
+                      {narrator.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative">
+                <Search className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="Search by author..."
+                  className="input input-with-icon"
+                  value={searchFilters.author}
+                  onChange={(e) =>
+                    setSearchFilters({
+                      ...searchFilters,
+                      author: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <div className="table-wrap">
@@ -326,6 +387,8 @@ export default function SoundManagement() {
                     >
                       Title
                     </th>
+                    <th scope="col">Narrator</th>
+                    <th scope="col">Author</th>
                     <th
                       scope="col"
                     >
@@ -353,7 +416,7 @@ export default function SoundManagement() {
                   {paginatedSounds.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={8}
                         className="empty-state"
                       >
                         No sounds found matching your search
@@ -368,6 +431,8 @@ export default function SoundManagement() {
                         <td className="cell-strong">
                           {sound.title}
                         </td>
+                        <td>{getNarratorName(sound.narrator)}</td>
+                        <td>{sound.author || "—"}</td>
                         <td>
                           {getCategoryNames(sound.categories)}
                         </td>
