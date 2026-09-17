@@ -7,7 +7,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   getCategories,
-  getNarrators,
   createAxiosInstance,
 } from "../../../../utils/API_SERVICE";
 import { AuthContext } from "../../../../context/authContext";
@@ -47,9 +46,8 @@ export default function AddOrUpdateSound({
 }) {
   const { accessToken } = useContext(AuthContext);
   const [categories, setCategories] = useState([]);
-  const [narrators, setNarrators] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedNarrator, setSelectedNarrator] = useState("");
+  const [narrator, setNarrator] = useState("");
   const [author, setAuthor] = useState("");
   const [soundFile, setSoundFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -73,18 +71,8 @@ export default function AddOrUpdateSound({
         toast.error("Error fetching categories");
       }
     }
-    async function fetchNarrators() {
-      try {
-        const narratorsData = await getNarrators(accessToken);
-        setNarrators(Array.isArray(narratorsData) ? narratorsData : []);
-      } catch (error) {
-        console.error("Error fetching narrators", error);
-        toast.error("Error fetching narrators");
-      }
-    }
     if (accessToken) {
       fetchCategories();
-      fetchNarrators();
     }
   }, [accessToken]);
 
@@ -110,14 +98,14 @@ export default function AddOrUpdateSound({
         );
       }
 
-      const narratorId =
-        typeof selectedSound.narrator === "object" && selectedSound.narrator
-          ? selectedSound.narrator._id
-          : selectedSound.narrator || "";
-      setSelectedNarrator(narratorId ? String(narratorId) : "");
+      setNarrator(
+        typeof selectedSound.narrator === "string"
+          ? selectedSound.narrator
+          : ""
+      );
       setAuthor(selectedSound.author || "");
     } else {
-      setSelectedNarrator("");
+      setNarrator("");
       setAuthor("");
     }
   }, [selectedSound]);
@@ -298,7 +286,7 @@ export default function AddOrUpdateSound({
         thumbnail: thumbnailUrl,
         duration: soundDuration,
         categories: selectedCategories,
-        narrator: selectedNarrator || null,
+        narrator: narrator.trim() || null,
         author: author.trim() || null,
         addedDate: new Date().toISOString(),
       };
@@ -575,20 +563,15 @@ export default function AddOrUpdateSound({
               <label htmlFor="narrator" className="field-label">
                 Narrator
               </label>
-              <select
+              <input
                 id="narrator"
                 name="narrator"
-                className="select"
-                value={selectedNarrator}
-                onChange={(e) => setSelectedNarrator(e.target.value)}
-              >
-                <option value="">No narrator</option>
-                {narrators.map((narrator) => (
-                  <option key={narrator._id} value={narrator._id}>
-                    {narrator.name}
-                  </option>
-                ))}
-              </select>
+                type="text"
+                className="input"
+                placeholder="Narrator name"
+                value={narrator}
+                onChange={(e) => setNarrator(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="author" className="field-label">

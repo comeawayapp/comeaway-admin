@@ -15,7 +15,6 @@ import AddOrUpdateSound from "./component/AddUpdateForm";
 import {
   deleteSound,
   getCategories,
-  getNarrators,
   getSounds,
 } from "../../../utils/API_SERVICE";
 import { AuthContext } from "../../../context/authContext";
@@ -27,7 +26,6 @@ export default function SoundManagement() {
   const [selectedSound, setSelectedSound] = useState(null);
   const [sounds, setSounds] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [narrators, setNarrators] = useState([]);
   const [searchFilters, setSearchFilters] = useState({
     serial: "",
     title: "",
@@ -48,9 +46,7 @@ export default function SoundManagement() {
   useEffect(() => {
     async function fetchSounds() {
       try {
-        const query = {};
-        if (searchFilters.narrator) query.narrator = searchFilters.narrator;
-        const soundsData = await getSounds(accessToken, query);
+        const soundsData = await getSounds(accessToken);
         setSounds(Array.isArray(soundsData) ? soundsData : []);
       } catch (error) {
         toast.error("Error fetching sounds");
@@ -66,23 +62,11 @@ export default function SoundManagement() {
       }
     }
 
-    async function fetchNarrators() {
-      try {
-        const narratorsData = await getNarrators(accessToken);
-        setNarrators(Array.isArray(narratorsData) ? narratorsData : []);
-      } catch (error) {
-        // Empty narrator list is fine (API may 404 when none exist)
-        setNarrators([]);
-      }
-    }
-
     if (accessToken && currentView === "main") {
       fetchSounds();
       fetchCategories();
-      fetchNarrators();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, currentView, searchFilters.narrator]);
+  }, [accessToken, currentView]);
   // console.log(categories, "categories");
 
   useEffect(() => {
@@ -97,14 +81,7 @@ export default function SoundManagement() {
     };
   }, []);
 
-  const getNarratorName = (narrator) => {
-    if (!narrator) return "—";
-    if (typeof narrator === "object") return narrator.name || "—";
-    const found = narrators.find((n) => String(n._id) === String(narrator));
-    return found?.name || "—";
-  };
-
-  // Filter sounds based on search term (client-side for serial/title/category/status/author)
+  // Filter sounds based on search term (client-side for serial/title/category/status/narrator/author)
   useEffect(() => {
     const filtered =
       Array.isArray(sounds) &&
@@ -124,6 +101,9 @@ export default function SoundManagement() {
           sound.status
             .toLowerCase()
             .includes(searchFilters.status.toLowerCase()) &&
+          (sound.narrator || "")
+            .toLowerCase()
+            .includes(searchFilters.narrator.toLowerCase()) &&
           (sound.author || "")
             .toLowerCase()
             .includes(searchFilters.author.toLowerCase())
@@ -157,9 +137,7 @@ export default function SoundManagement() {
       // If no sound data is passed, refetch the sounds list
       if (!newSound) {
         // console.log("No sound data provided, refetching sounds list...");
-        const query = {};
-        if (searchFilters.narrator) query.narrator = searchFilters.narrator;
-        const soundsData = await getSounds(accessToken, query);
+        const soundsData = await getSounds(accessToken);
         setSounds(Array.isArray(soundsData) ? soundsData : []);
       } else {
         // Handle the case where sound data is passed (legacy behavior)
@@ -338,8 +316,11 @@ export default function SoundManagement() {
                 />
               </div>
               <div className="relative">
-                <select
-                  className="select"
+                <Search className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="Search by narrator..."
+                  className="input input-with-icon"
                   value={searchFilters.narrator}
                   onChange={(e) =>
                     setSearchFilters({
@@ -347,14 +328,7 @@ export default function SoundManagement() {
                       narrator: e.target.value,
                     })
                   }
-                >
-                  <option value="">All Narrators</option>
-                  {narrators.map((narrator) => (
-                    <option key={narrator._id} value={narrator._id}>
-                      {narrator.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               <div className="relative">
                 <Search className="input-icon" />
@@ -431,7 +405,7 @@ export default function SoundManagement() {
                         <td className="cell-strong">
                           {sound.title}
                         </td>
-                        <td>{getNarratorName(sound.narrator)}</td>
+                        <td>{sound.narrator || "—"}</td>
                         <td>{sound.author || "—"}</td>
                         <td>
                           {getCategoryNames(sound.categories)}
