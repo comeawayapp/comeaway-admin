@@ -9,6 +9,8 @@ import SoundManagement from "./sidebar/SoundManagement/SoundManagement";
 import UserManagement from "./sidebar/UserManagement/UserManagement";
 import Settings from "./sidebar/Settings/Settings";
 import CategoryManagement from "./sidebar/CategoryManagment/CategoryManagement";
+import MixManagement from "./sidebar/MixManagement/MixManagement";
+import MixCategoryManagement from "./sidebar/MixCategoryManagement/MixCategoryManagement";
 import ActivationCodeManagement from "./sidebar/ActivationCodeManagement/ActivationCodeManagement";
 import EntitlementManagement from "./sidebar/EntitlementManagement/EntitlementManagement";
 import DiscountManagement from "./sidebar/DiscountManagement/DiscountManagement";
@@ -55,6 +57,10 @@ function Home() {
         return <CategoryManagement />;
       case "SoundManagement":
         return <SoundManagement />;
+      case "MixCategories":
+        return <MixCategoryManagement />;
+      case "MixManagement":
+        return <MixManagement />;
       // case 'Subscription':
       //   return <SubscriptionManagement />;
       case "UserManagement":
