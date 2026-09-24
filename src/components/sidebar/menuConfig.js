@@ -23,16 +23,6 @@ export const MENU_ITEMS = {
     roles: ALL_STAFF,
     group: "Content",
   },
-  MixCategories: {
-    label: "Mix Categories",
-    roles: ALL_STAFF,
-    group: "Content",
-  },
-  MixManagement: {
-    label: "Mix Management",
-    roles: ALL_STAFF,
-    group: "Content",
-  },
   UserManagement: {
     label: "User Management",
     roles: OWNER_AND_ADMIN,

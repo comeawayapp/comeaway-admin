@@ -4,8 +4,7 @@ import { CgList } from "react-icons/cg";
 import { FaUser, FaUsers, FaBars, FaTimes, FaTicketAlt } from "react-icons/fa";
 import { IoSettings } from "react-icons/io5";
 import { LuLayoutDashboard } from "react-icons/lu";
-import { TbMusicCog, TbLayersLinked } from "react-icons/tb";
-import { MdOutlineCategory } from "react-icons/md";
+import { TbMusicCog } from "react-icons/tb";
 import { AuthContext } from "../../context/authContext";
 import { getNavGroups, loadSection } from "./menuConfig";
 
@@ -13,8 +12,6 @@ const SECTION_ICONS = {
   Dashboard: LuLayoutDashboard,
   Categories: CgList,
   SoundManagement: TbMusicCog,
-  MixCategories: MdOutlineCategory,
-  MixManagement: TbLayersLinked,
   UserManagement: FaUser,
   EntitlementManagement: FaTicketAlt,
   TeamManagement: FaUsers,

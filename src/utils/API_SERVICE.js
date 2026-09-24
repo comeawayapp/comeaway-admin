@@ -1068,51 +1068,5 @@ export const acceptTeamInvite = async (token, password) => {
   }
 };
 
-// --- Mix + MixCategory ---
-
-export const createMixCategory = async (name, slug, accessToken) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.post("/mix-categories/create", {
-    name,
-    slug,
-  });
-  return response.data;
-};
-
-export const getMixCategories = async (accessToken) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.get("/mix-categories");
-  return response.data;
-};
-
-export const updateMixCategory = async (id, name, slug, accessToken) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.put(`/mix-categories/${id}`, {
-    name,
-    slug,
-  });
-  return response.data;
-};
-
-export const deleteMixCategory = async (id, accessToken) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.delete(`/mix-categories/${id}`);
-  return response.data;
-};
-
-export const getMixes = async (accessToken, query = {}) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.get("/mixes/getMixes", {
-    params: query,
-  });
-  return response.data;
-};
-
-export const deleteMix = async (id, accessToken) => {
-  const axiosInstance = createAxiosInstance(accessToken);
-  const response = await axiosInstance.delete(`/mixes/deleteMix/${id}`);
-  return response.data;
-};
-
 // Export the createAxiosInstance function
 export { createAxiosInstance };
