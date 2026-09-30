@@ -81,6 +81,9 @@ class DirectUploadService {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
 
+      // Encode filename for S3 metadata headers (must be ISO-8859-1 / ASCII-safe)
+      const safeOriginalFilename = encodeURIComponent(file.name);
+
       // Create upload command with proper ACL and headers
       const uploadCommand = new PutObjectCommand({
         Bucket: this.bucket,
@@ -90,7 +93,7 @@ class DirectUploadService {
         ACL: "public-read",
         CacheControl: "public, max-age=31536000",
         Metadata: {
-          "original-filename": file.name,
+          "original-filename": safeOriginalFilename,
           "upload-timestamp": new Date().toISOString(),
           "file-size": file.size.toString(),
         },
